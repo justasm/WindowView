@@ -45,13 +45,13 @@ public class DemoActivity extends ActionBarActivity {
         windowView1.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                windowView1.resetOrigin();
+                windowView1.resetOrientationOrigin();
             }
         });
         windowView2.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                windowView2.resetOrigin();
+                windowView2.resetOrientationOrigin();
             }
         });
     }

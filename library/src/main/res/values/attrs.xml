@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <declare-styleable name="WindowView">
+        <attr name="maxPitch" format="float" />
+        <attr name="maxRoll" format="float" />
+        <attr name="verticalOrigin" format="float" />
+        <attr name="horizontalOrigin" format="float" />
+
+        <attr name="orientationMode" format="enum">
+            <enum name="Absolute" value="0" />
+            <enum name="Relative" value="1" />
+        </attr>
+
+        <attr name="translateMode" format="enum">
+            <enum name="Constant" value="0" />
+            <enum name="Proportional" value="1" />
+        </attr>
+    </declare-styleable>
+</resources>

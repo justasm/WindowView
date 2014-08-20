@@ -16,6 +16,7 @@
 package com.jmedeisis.windowview;
 
 import android.content.Context;
+import android.content.res.TypedArray;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
@@ -64,23 +65,29 @@ public class WindowView extends ImageView implements SensorEventListener {
 	private boolean haveGravData = false;
 	private boolean haveAccelData = false;
 	private boolean haveMagData = false;
-	
-	// TODO make set-able, +xml attribs
-	private static final float MAX_PITCH = 30;
-	private static final float MAX_ROLL = 30;
-	
-	private static final float HORIZONTAL_ORIGIN = 0;
-	private static final float VERTICAL_ORIGIN = 0;
+
+	private static final float DEFAULT_MAX_PITCH = 30;
+	private static final float DEFAULT_MAX_ROLL = 30;
+	private static final float DEFAULT_HORIZONTAL_ORIGIN = 0;
+	private static final float DEFAULT_VERTICAL_ORIGIN = 0;
+    private float maxPitch;
+    private float maxRoll;
+    private float horizontalOrigin;
+    private float verticalOrigin;
 
     /** Determines the basis in which device orientation is measured. */
 	public static enum OrientationMode {
 		/** Measures absolute yaw / pitch / roll (i.e. relative to the world). */
 		ABSOLUTE,
-		/** Measures yaw / pitch / roll relative to the starting orientation. */
+		/**
+         * Measures yaw / pitch / roll relative to the starting orientation.
+         * The starting orientation is determined upon receiving the first sensor data,
+         * but can be manually reset at any time using {@link #resetOrientationOrigin()}.
+         */
 		RELATIVE
 	}
-	// TODO make set-able, +xml attribs
-	private OrientationMode orientationMode = OrientationMode.RELATIVE;
+    private static final OrientationMode DEFAULT_ORIENTATION_MODE = OrientationMode.RELATIVE;
+	private OrientationMode orientationMode;
 
     /** Determines the relationship between change in device tilt and change in image translation. */
     public static enum TranslateMode {
@@ -101,7 +108,8 @@ public class WindowView extends ImageView implements SensorEventListener {
          */
         PROPORTIONAL
     }
-    private TranslateMode translateMode = TranslateMode.PROPORTIONAL;
+    private static final TranslateMode DEFAULT_TRANSLATE_MODE = TranslateMode.PROPORTIONAL;
+    private TranslateMode translateMode;
 	
 	// layout
 	private boolean heightMatches;
@@ -122,11 +130,36 @@ public class WindowView extends ImageView implements SensorEventListener {
 	public WindowView(Context context, AttributeSet attrs) {
 		this(context, attrs, 0);
 	}
-	
+
 	public WindowView(Context context, AttributeSet attrs, int defStyle) {
 		super(context, attrs, defStyle);
+
+        maxPitch = DEFAULT_MAX_PITCH;
+        maxRoll = DEFAULT_MAX_ROLL;
+        verticalOrigin = DEFAULT_VERTICAL_ORIGIN;
+        horizontalOrigin = DEFAULT_HORIZONTAL_ORIGIN;
+        orientationMode = DEFAULT_ORIENTATION_MODE;
+        translateMode = DEFAULT_TRANSLATE_MODE;
+
+        if(null != attrs){
+            final TypedArray a = context.obtainStyledAttributes(attrs, R.styleable.WindowView);
+            maxPitch = a.getFloat(R.styleable.WindowView_maxPitch, maxPitch);
+            maxRoll = a.getFloat(R.styleable.WindowView_maxRoll, maxRoll);
+            verticalOrigin = a.getFloat(R.styleable.WindowView_verticalOrigin, verticalOrigin);
+            horizontalOrigin = a.getFloat(R.styleable.WindowView_horizontalOrigin, horizontalOrigin);
+
+            int orientationModeIndex = a.getInt(R.styleable.WindowView_orientationMode, -1);
+            if(orientationModeIndex >= 0){
+                orientationMode = OrientationMode.values()[orientationModeIndex];
+            }
+            int translateModeIndex = a.getInt(R.styleable.WindowView_translateMode, -1);
+            if(translateModeIndex >= 0){
+                translateMode = TranslateMode.values()[translateModeIndex];
+            }
+        }
+
 		sensorManager = (SensorManager) context.getSystemService(Context.SENSOR_SERVICE);
-		
+
 		yawFilter = new Filter(NUM_FILTER_SAMPLES, LOW_PASS_COEFF, 0);
 		pitchFilter = new Filter(NUM_FILTER_SAMPLES, LOW_PASS_COEFF, 0);
 		rollFilter = new Filter(NUM_FILTER_SAMPLES, LOW_PASS_COEFF, 0);
@@ -137,7 +170,7 @@ public class WindowView extends ImageView implements SensorEventListener {
 		debugTextPaint.setColor(Color.MAGENTA);
 		debugTextPaint.setTextSize(DEBUG_TEXT_SIZE);
 		debugTextPaint.setTypeface(Typeface.MONOSPACE);
-		
+
 		setScaleType(ScaleType.CENTER_CROP);
 	}
 	
@@ -194,12 +227,12 @@ public class WindowView extends ImageView implements SensorEventListener {
 		float translateY = 0f;
 		if(heightMatches){
 			// only let user tilt horizontally
-			translateX = (-HORIZONTAL_ORIGIN +
-                    clampAbsoluteFloating(HORIZONTAL_ORIGIN, latestRoll, MAX_ROLL)) / MAX_ROLL;
+			translateX = (-horizontalOrigin +
+                    clampAbsoluteFloating(horizontalOrigin, latestRoll, maxRoll)) / maxRoll;
 		} else {
 			// only let user tilt vertically
-			translateY = (VERTICAL_ORIGIN -
-                    clampAbsoluteFloating(VERTICAL_ORIGIN, latestPitch, MAX_PITCH)) / MAX_PITCH;
+			translateY = (verticalOrigin -
+                    clampAbsoluteFloating(verticalOrigin, latestPitch, maxPitch)) / maxPitch;
 		}
 		canvas.save();
         switch(translateMode){
@@ -246,11 +279,11 @@ public class WindowView extends ImageView implements SensorEventListener {
 			debugText(canvas, i++, "pitch " + latestPitch);
 			debugText(canvas, i++, "roll  " + latestRoll);
 			
-			debugText(canvas, i++, "MAX_PITCH " + MAX_PITCH);
-			debugText(canvas, i++, "MAX_ROLL  " + MAX_ROLL);
+			debugText(canvas, i++, "MAX_PITCH " + maxPitch);
+			debugText(canvas, i++, "MAX_ROLL  " + maxRoll);
 			
-			debugText(canvas, i++, "HOR ORIGIN " + HORIZONTAL_ORIGIN);
-			debugText(canvas, i++, "VER ORIGIN " + VERTICAL_ORIGIN);
+			debugText(canvas, i++, "HOR ORIGIN " + horizontalOrigin);
+			debugText(canvas, i++, "VER ORIGIN " + verticalOrigin);
 			
 			switch(screenRotation){
 			case Surface.ROTATION_0:
@@ -284,6 +317,48 @@ public class WindowView extends ImageView implements SensorEventListener {
 
     public TranslateMode getTranslateMode(){
         return translateMode;
+    }
+
+    /** Maximum angle (in degrees) from origin for vertical tilts. */
+    public void setMaxPitch(float maxPitch) {
+        this.maxPitch = maxPitch;
+    }
+
+    public float getMaxPitch() {
+        return maxPitch;
+    }
+
+    /** Maximum angle (in degrees) from origin for horizontal tilts. */
+    public void setMaxRoll(float maxRoll) {
+        this.maxRoll = maxRoll;
+    }
+
+    public float getMaxRoll() {
+        return maxRoll;
+    }
+
+    /**
+     * Horizontal origin (in degrees). When {@link #latestRoll} equals this value, the image
+     * is centered horizontally.
+     */
+    public void setHorizontalOrigin(float horizontalOrigin) {
+        this.horizontalOrigin = horizontalOrigin;
+    }
+
+    public float getHorizontalOrigin() {
+        return horizontalOrigin;
+    }
+
+    /**
+     * Vertical origin (in degrees). When {@link #latestPitch} equals this value, the image
+     * is centered vertically.
+     */
+    public void setVerticalOrigin(float verticalOrigin) {
+        this.verticalOrigin = verticalOrigin;
+    }
+
+    public float getVerticalOrigin() {
+        return verticalOrigin;
     }
 	
 	@Override
@@ -450,7 +525,7 @@ public class WindowView extends ImageView implements SensorEventListener {
      * Manually resets the orientation origin. Has no effect unless {@link #getOrientationMode()}
      * is {@link com.jmedeisis.windowview.WindowView.OrientationMode#RELATIVE}.
      */
-	public boolean resetOrigin(){
+	public boolean resetOrientationOrigin(){
 		if(haveDataNecessaryToComputeOrientation()){
 			synchronized(rotationMatrix){
 				if(computeRotationMatrix()){
@@ -471,9 +546,7 @@ public class WindowView extends ImageView implements SensorEventListener {
 	/** Determines the mapping of orientation to image offset. See {@link com.jmedeisis.windowview.WindowView.OrientationMode}. */
 	public void setOrientationMode(OrientationMode orientationMode){
 		this.orientationMode = orientationMode;
-		
 		haveOrigin = false;
-		// TODO reset other parameters? test
 	}
 
     public OrientationMode getOrientationMode(){
