@@ -10,17 +10,26 @@ Usage
 -----
 Simply use in place of an `ImageView`. An example usage in an XML layout file:
 
-    <com.jmedeisis.windowview.WindowView
+    <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+        xmlns:app="http://schemas.android.com/apk/res-auto"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:src="@drawable/my_image" />
+        android:layout_height="match_parent" >
+    
+        <com.jmedeisis.windowview.WindowView
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:src="@drawable/my_image"
+            app:orientationMode="Relative"
+            app:translateMode="Proportional"/>
+    
+    </FrameLayout>
 
 You may also refer to the included sample application project.
 
 Limitations
 -----------
 - Only supports the CENTER_CROP scale type.
-- Work for API levels 9+.
+- Works for API levels 9+.
 
 Known Problems
 --------------
