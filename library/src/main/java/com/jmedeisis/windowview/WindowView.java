@@ -71,15 +71,37 @@ public class WindowView extends ImageView implements SensorEventListener {
 	
 	private static final float HORIZONTAL_ORIGIN = 0;
 	private static final float VERTICAL_ORIGIN = 0;
-	
-	public static enum Mode {
+
+    /** Determines the basis in which device orientation is measured. */
+	public static enum OrientationMode {
 		/** Measures absolute yaw / pitch / roll (i.e. relative to the world). */
 		ABSOLUTE,
 		/** Measures yaw / pitch / roll relative to the starting orientation. */
 		RELATIVE
 	}
 	// TODO make set-able, +xml attribs
-	private Mode mode = Mode.RELATIVE;
+	private OrientationMode orientationMode = OrientationMode.RELATIVE;
+
+    /** Determines the relationship between change in device tilt and change in image translation. */
+    public static enum TranslateMode {
+        /**
+         * The image is translated by a constant amount per unit of device tilt.
+         * Generally preferable when viewing multiple adjacent WindowViews that have different
+         * contents but should move in tandem.
+         * <p>
+         * Same amount of tilt will result in the same translation for two images of differing size.
+         */
+        CONSTANT,
+        /**
+         * The image is translated proportional to its off-view size. Generally preferable when
+         * viewing a single WindowView, this mode ensures that the full image can be 'explored'
+         * within a fixed tilt amount range.
+         * <p>
+         * Same amount of tilt will result in different translation for two images of differing size.
+         */
+        PROPORTIONAL
+    }
+    private TranslateMode translateMode = TranslateMode.PROPORTIONAL;
 	
 	// layout
 	private boolean heightMatches;
@@ -172,13 +194,24 @@ public class WindowView extends ImageView implements SensorEventListener {
 		float translateY = 0f;
 		if(heightMatches){
 			// only let user tilt horizontally
-			translateX = (-HORIZONTAL_ORIGIN + clampAbsoluteFloating(HORIZONTAL_ORIGIN, latestRoll, MAX_ROLL)) / MAX_ROLL;
+			translateX = (-HORIZONTAL_ORIGIN +
+                    clampAbsoluteFloating(HORIZONTAL_ORIGIN, latestRoll, MAX_ROLL)) / MAX_ROLL;
 		} else {
 			// only let user tilt vertically
-			translateY = (VERTICAL_ORIGIN - clampAbsoluteFloating(VERTICAL_ORIGIN, latestPitch, MAX_PITCH)) / MAX_PITCH;
+			translateY = (VERTICAL_ORIGIN -
+                    clampAbsoluteFloating(VERTICAL_ORIGIN, latestPitch, MAX_PITCH)) / MAX_PITCH;
 		}
 		canvas.save();
-		canvas.translate(Math.round((widthDifference / 2) * translateX), Math.round((heightDifference / 2) * translateY));
+        switch(translateMode){
+            case CONSTANT:
+                canvas.translate(clampAbsoluteFloating(0, 300 * translateX, widthDifference / 2),
+                        clampAbsoluteFloating(0, 300 * translateY, heightDifference / 2));
+                break;
+            case PROPORTIONAL:
+                canvas.translate(Math.round((widthDifference / 2) * translateX),
+                        Math.round((heightDifference / 2) * translateY));
+                break;
+        }
 		super.onDraw(canvas);
 		canvas.restore();
 		
@@ -189,7 +222,9 @@ public class WindowView extends ImageView implements SensorEventListener {
 			debugText(canvas, i++, "height     " + getHeight());
 			debugText(canvas, i++, "img width  " + getScaledImageWidth());
 			debugText(canvas, i++, "img height " + getScaledImageHeight());
-			
+
+            debugText(canvas, i++, translateMode + " translateMode");
+
 			debugText(canvas, i++, "tx " + translateX);
 			debugText(canvas, i++, "ty " + translateY);
             debugText(canvas, i++, "tx abs " + Math.round((widthDifference / 2) * translateX));
@@ -198,7 +233,7 @@ public class WindowView extends ImageView implements SensorEventListener {
 		}
 		
 		if(DEBUG_TILT){
-			debugText(canvas, i++, mode + " mode");
+			debugText(canvas, i++, orientationMode + " orientationMode");
 			
 			if(haveOrigin){
 				SensorManager.getOrientation(rotationMatrixOrigin, orientationOrigin);
@@ -241,6 +276,15 @@ public class WindowView extends ImageView implements SensorEventListener {
 	private float clampAbsoluteFloating(float origin, float value, float maxAbsolute){
 		return value < origin ? Math.max(value, origin - maxAbsolute) : Math.min(value, origin + maxAbsolute);
 	}
+
+    /** See {@link com.jmedeisis.windowview.WindowView.TranslateMode}. */
+    public void setTranslateMode(TranslateMode translateMode){
+        this.translateMode = translateMode;
+    }
+
+    public TranslateMode getTranslateMode(){
+        return translateMode;
+    }
 	
 	@Override
 	protected void onSizeChanged(int w, int h, int oldw, int oldh){
@@ -370,7 +414,7 @@ public class WindowView extends ImageView implements SensorEventListener {
 	private void computeOrientation(){
 		synchronized(rotationMatrix){
 			if(computeRotationMatrix()){
-				switch(mode){
+				switch(orientationMode){
 				case ABSOLUTE:
 					// get absolute yaw / pitch / roll
 					SensorManager.getOrientation(rotationMatrix, orientation);
@@ -402,7 +446,10 @@ public class WindowView extends ImageView implements SensorEventListener {
 		}
 	}
 	
-	/** Manually resets the orientation origin. Has no effect unless the mode is {@link com.jmedeisis.windowview.WindowView.Mode#RELATIVE}. */
+	/**
+     * Manually resets the orientation origin. Has no effect unless {@link #getOrientationMode()}
+     * is {@link com.jmedeisis.windowview.WindowView.OrientationMode#RELATIVE}.
+     */
 	public boolean resetOrigin(){
 		if(haveDataNecessaryToComputeOrientation()){
 			synchronized(rotationMatrix){
@@ -421,13 +468,17 @@ public class WindowView extends ImageView implements SensorEventListener {
 		haveOrigin = true;
 	}
 	
-	/** Determines the mapping of orientation to image offset. See {@link com.jmedeisis.windowview.WindowView.Mode}. */
-	public void setMode(Mode mode){
-		this.mode = mode;
+	/** Determines the mapping of orientation to image offset. See {@link com.jmedeisis.windowview.WindowView.OrientationMode}. */
+	public void setOrientationMode(OrientationMode orientationMode){
+		this.orientationMode = orientationMode;
 		
 		haveOrigin = false;
 		// TODO reset other parameters? test
 	}
+
+    public OrientationMode getOrientationMode(){
+        return orientationMode;
+    }
 	
 	/** Ring buffer low-pass filter. */
 	private class Filter {
