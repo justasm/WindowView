@@ -117,8 +117,8 @@ public class WindowView extends ImageView implements SensorEventListener {
 	private float heightDifference;
 	
 	// debug
-	private static final boolean DEBUG_TILT = true;
-	private static final boolean DEBUG_IMAGE = true;
+	private boolean debugTilt = false;
+	private boolean debugImage = false;
 	private static final boolean DEBUG_LIFECYCLE = false;
 	private final static int DEBUG_TEXT_SIZE = 32;
 	private final Paint debugTextPaint;
@@ -247,10 +247,10 @@ public class WindowView extends ImageView implements SensorEventListener {
         }
 		super.onDraw(canvas);
 		canvas.restore();
-		
-		// TODO DEBUG
+
+        // debug from here on!
 		int i = 0;
-		if(DEBUG_IMAGE){
+		if(debugImage){
 			debugText(canvas, i++, "width      " + getWidth());
 			debugText(canvas, i++, "height     " + getHeight());
 			debugText(canvas, i++, "img width  " + getScaledImageWidth());
@@ -265,7 +265,7 @@ public class WindowView extends ImageView implements SensorEventListener {
 			debugText(canvas, i++, "height matches " + heightMatches);
 		}
 		
-		if(DEBUG_TILT){
+		if(debugTilt){
 			debugText(canvas, i++, orientationMode + " orientationMode");
 			
 			if(haveOrigin){
@@ -600,4 +600,18 @@ public class WindowView extends ImageView implements SensorEventListener {
 			return sum / buffer.length;
 		}
 	}
+
+    /*
+	 * DEBUG
+	 * -----------------------------------------------------------------------------------------------------------------------------------
+	 */
+    /**
+     * Enables/disables on-screen debug information.
+     * @param debugTilt if true, displays on-screen information about the current tilt values and limits.
+     * @param debugImage if true, displays on-screen information about the source image and dimensions.
+     */
+    public void setDebugEnabled(boolean debugTilt, boolean debugImage){
+        this.debugTilt = debugTilt;
+        this.debugImage = debugImage;
+    }
 }
