@@ -1,6 +1,5 @@
 package com.jmedeisis.windowview;
 
-import android.annotation.SuppressLint;
 import android.content.Context;
 import android.graphics.Canvas;
 import android.graphics.Color;
@@ -12,7 +11,6 @@ import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
 import android.util.AttributeSet;
 import android.util.Log;
-import android.view.MotionEvent;
 import android.view.Surface;
 import android.view.WindowManager;
 import android.widget.ImageView;
@@ -151,7 +149,8 @@ public class WindowView extends ImageView implements SensorEventListener {
 	 * DRAWING & LAYOUT
 	 * -----------------------------------------------------------------------------------------------------------------------------------
 	 */
-	@Override
+	@SuppressWarnings("UnusedAssignment")
+    @Override
 	protected void onDraw(Canvas canvas){
 		// -1 -> 1
 		float translateX = 0f;
@@ -279,24 +278,6 @@ public class WindowView extends ImageView implements SensorEventListener {
 	}
 	
 	/*
-	 * INPUT
-	 * -----------------------------------------------------------------------------------------------------------------------------------
-	 */
-	@SuppressLint("ClickableViewAccessibility")
-	@Override
-	public boolean onTouchEvent(MotionEvent event){
-		// TODO make origin reset on touch optional.. or just part of demo app
-		switch(event.getActionMasked()){
-		case MotionEvent.ACTION_DOWN:
-			if(Mode.RELATIVE == mode){
-				resetOrigin();
-			}
-			break;
-		}
-		return super.onTouchEvent(event);
-	}
-	
-	/*
 	 * SENSOR DATA ACQUISITION / PROCESSING
 	 * -----------------------------------------------------------------------------------------------------------------------------------
 	 */
@@ -313,7 +294,11 @@ public class WindowView extends ImageView implements SensorEventListener {
 			haveGravData = true;
 			break;
 		case Sensor.TYPE_ACCELEROMETER:
-			if(haveGravData) break; // gravity sensor data is better!
+			if(haveGravData){
+                // gravity sensor data is better! let's not listen to the accelerometer anymore
+                sensorManager.unregisterListener(this, sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER));
+                break;
+            }
 			System.arraycopy(event.values, 0, latestAccelerations, 0, 3);
 			haveAccelData = true;
 			break;
@@ -400,7 +385,7 @@ public class WindowView extends ImageView implements SensorEventListener {
 		}
 	}
 	
-	/** Manually resets the orientation origin. */
+	/** Manually resets the orientation origin. Has no effect unless the mode is {@link com.jmedeisis.windowview.WindowView.Mode#RELATIVE}. */
 	public boolean resetOrigin(){
 		if(haveDataNecessaryToComputeOrientation()){
 			synchronized(rotationMatrix){
@@ -413,7 +398,7 @@ public class WindowView extends ImageView implements SensorEventListener {
 		return false;
 	}
 	
-	/** Upsets the internal orientation origin matrix. {@link #computeRotationMatrix()} must have been called prior. */
+	/** Resets the internal orientation origin matrix. {@link #computeRotationMatrix()} must have been called prior. */
 	private void updateOrigin(){
 		System.arraycopy(rotationMatrix, 0, rotationMatrixOrigin, 0, 9);
 		haveOrigin = true;
