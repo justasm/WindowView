@@ -5,6 +5,9 @@ import android.support.v7.app.ActionBarActivity;
 import android.os.Bundle;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.View;
+
+import com.jmedeisis.windowview.WindowView;
 
 public class DemoActivity extends ActionBarActivity {
 
@@ -21,6 +24,21 @@ public class DemoActivity extends ActionBarActivity {
         } else {
             setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT); // default
         }
+
+        final WindowView windowView1 = (WindowView) findViewById(R.id.windowView1);
+        final WindowView windowView2 = (WindowView) findViewById(R.id.windowView2);
+        windowView1.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                windowView1.resetOrigin();
+            }
+        });
+        windowView2.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                windowView2.resetOrigin();
+            }
+        });
     }
 
     @Override

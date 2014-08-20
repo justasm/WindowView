@@ -6,6 +6,7 @@
     android:orientation="vertical" >
 
     <com.jmedeisis.windowview.WindowView
+        android:id="@+id/windowView1"
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:layout_weight="1"
@@ -14,6 +15,7 @@
         android:contentDescription="@string/content_description" />
 
     <com.jmedeisis.windowview.WindowView
+        android:id="@+id/windowView2"
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:layout_weight="1"

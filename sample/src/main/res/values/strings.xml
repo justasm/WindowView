@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
 
-    <string name="app_name">Window View Demo</string>
+    <string name="app_name">WindowView Demo</string>
     <string name="action_lock_portrait">Lock Portrait</string>
-    <string name="content_description">Image.</string>
+    <string name="content_description">Window image.</string>
 
 </resources>
