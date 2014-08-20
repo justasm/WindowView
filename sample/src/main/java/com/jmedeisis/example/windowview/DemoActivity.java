@@ -27,21 +27,19 @@ import com.jmedeisis.windowview.WindowView;
 public class DemoActivity extends ActionBarActivity {
 
     private static final String ORIENTATION = "orientation";
+    private static final String DEBUG_TILT = "debugTilt";
+    private static final String DEBUG_IMAGE = "debugImage";
+    boolean debugTilt, debugImage;
+    WindowView windowView1;
+    WindowView windowView2;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_demo);
 
-        if(null != savedInstanceState && savedInstanceState.containsKey(ORIENTATION)){
-            //noinspection ResourceType
-            setRequestedOrientation(savedInstanceState.getInt(ORIENTATION));
-        } else {
-            setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT); // default
-        }
-
-        final WindowView windowView1 = (WindowView) findViewById(R.id.windowView1);
-        final WindowView windowView2 = (WindowView) findViewById(R.id.windowView2);
+        windowView1 = (WindowView) findViewById(R.id.windowView1);
+        windowView2 = (WindowView) findViewById(R.id.windowView2);
         windowView1.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -54,12 +52,27 @@ public class DemoActivity extends ActionBarActivity {
                 windowView2.resetOrientationOrigin();
             }
         });
+
+        if(null != savedInstanceState && savedInstanceState.containsKey(ORIENTATION)
+                && savedInstanceState.containsKey(DEBUG_TILT)
+                && savedInstanceState.containsKey(DEBUG_IMAGE)){
+            //noinspection ResourceType
+            setRequestedOrientation(savedInstanceState.getInt(ORIENTATION));
+            debugTilt = savedInstanceState.getBoolean(DEBUG_TILT);
+            debugImage = savedInstanceState.getBoolean(DEBUG_IMAGE);
+        } else {
+            setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT); // default
+            debugTilt = false;
+            debugImage = false;
+        }
     }
 
     @Override
     public void onSaveInstanceState(Bundle outState){
         super.onSaveInstanceState(outState);
         outState.putInt(ORIENTATION, getRequestedOrientation());
+        outState.putBoolean(DEBUG_TILT, debugTilt);
+        outState.putBoolean(DEBUG_IMAGE, debugImage);
     }
 
     @Override
@@ -68,6 +81,8 @@ public class DemoActivity extends ActionBarActivity {
 
         menu.findItem(R.id.action_lock_portrait)
                 .setChecked(getRequestedOrientation() == ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
+        menu.findItem(R.id.action_debug_tilt).setChecked(debugTilt);
+        menu.findItem(R.id.action_debug_image).setChecked(debugImage);
 
         return true;
     }
@@ -82,6 +97,18 @@ public class DemoActivity extends ActionBarActivity {
                 } else {
                     setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_FULL_SENSOR);
                 }
+                return true;
+            case R.id.action_debug_tilt:
+                item.setChecked(!item.isChecked());
+                debugTilt = item.isChecked();
+                windowView1.setDebugEnabled(debugTilt, debugImage);
+                windowView2.setDebugEnabled(debugTilt, debugImage);
+                return true;
+            case R.id.action_debug_image:
+                item.setChecked(!item.isChecked());
+                debugImage = item.isChecked();
+                windowView1.setDebugEnabled(debugTilt, debugImage);
+                windowView2.setDebugEnabled(debugTilt, debugImage);
                 return true;
         }
         return super.onOptionsItemSelected(item);

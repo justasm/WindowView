@@ -7,4 +7,16 @@
         app:showAsAction="never"
         android:title="@string/action_lock_portrait"
         android:checkable="true" />
+
+    <item
+        android:id="@+id/action_debug_tilt"
+        app:showAsAction="never"
+        android:title="@string/action_debug_tilt"
+        android:checkable="true" />
+
+    <item
+        android:id="@+id/action_debug_image"
+        app:showAsAction="never"
+        android:title="@string/action_debug_image"
+        android:checkable="true" />
 </menu>
