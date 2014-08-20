@@ -73,7 +73,7 @@ public class WindowView extends ImageView implements SensorEventListener {
 	
 	// debug
 	private static final boolean DEBUG_TILT = true;
-	private static final boolean DEBUG_IMAGE = false;
+	private static final boolean DEBUG_IMAGE = true;
 	private static final boolean DEBUG_LIFECYCLE = false;
 	private final static int DEBUG_TEXT_SIZE = 32;
 	private final Paint debugTextPaint;
@@ -177,6 +177,8 @@ public class WindowView extends ImageView implements SensorEventListener {
 			
 			debugText(canvas, i++, "tx " + translateX);
 			debugText(canvas, i++, "ty " + translateY);
+            debugText(canvas, i++, "tx abs " + Math.round((widthDifference / 2) * translateX));
+            debugText(canvas, i++, "ty abs " + Math.round((heightDifference / 2) * translateY));
 			debugText(canvas, i++, "height matches " + heightMatches);
 		}
 		
