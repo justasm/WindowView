@@ -144,6 +144,7 @@ public class WindowView extends ImageView implements SensorEventListener {
             if(translateModeIndex >= 0){
                 translateMode = TranslateMode.values()[translateModeIndex];
             }
+            a.recycle();
         }
 
         sensorManager = (SensorManager) context.getSystemService(Context.SENSOR_SERVICE);
