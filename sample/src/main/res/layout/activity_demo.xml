@@ -10,7 +10,7 @@
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:layout_weight="1"
-        android:src="@drawable/image_wide"
+        android:src="@drawable/london_wide"
         android:contentDescription="@string/content_description" />
 
     <com.jmedeisis.windowview.WindowView
@@ -18,7 +18,7 @@
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:layout_weight="1"
-        android:src="@drawable/image_tall"
+        android:src="@drawable/singapore_tall"
         android:contentDescription="@string/content_description" />
 
 </LinearLayout>
