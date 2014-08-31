@@ -63,6 +63,18 @@ public class WindowView extends ImageView implements SensorEventListener {
     private float horizontalOrigin;
     private float verticalOrigin;
 
+    /** Interface definition for a callback to be invoked when new orientation values are processed. */
+    public static interface OnNewOrientationListener {
+        /**
+         * Called when new orientation values are present.
+         * @see com.jmedeisis.windowview.WindowView#getLatestYaw()
+         * @see com.jmedeisis.windowview.WindowView#getLatestPitch()
+         * @see com.jmedeisis.windowview.WindowView#getLatestRoll()
+         */
+        public void onNewOrientation(WindowView windowView);
+    }
+    private OnNewOrientationListener orientationListener;
+
     /** Determines the basis in which device orientation is measured. */
     public static enum OrientationMode {
         /** Measures absolute yaw / pitch / roll (i.e. relative to the world). */
@@ -517,10 +529,16 @@ public class WindowView extends ImageView implements SensorEventListener {
                 latestPitch = pitchFilter.push(pitch);
                 latestRoll = rollFilter.push(roll);
 
+                if(null != orientationListener) orientationListener.onNewOrientation(this);
+
                 // redraw image
                 invalidate();
             }
         }
+    }
+
+    public void setOnNewOrientationListener(OnNewOrientationListener orientationListener){
+        this.orientationListener = orientationListener;
     }
 
     /**
