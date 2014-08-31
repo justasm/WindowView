@@ -3,6 +3,8 @@ WindowView
 
 *Window as in windowsill.*
 
+![Tilting to pan images.](/sample/sample_in_action.gif)
+
 An Android `ImageView` that can be panned around by tilting your device,
 as if you were looking through a window.
 
