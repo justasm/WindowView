@@ -524,6 +524,28 @@ public class WindowView extends ImageView implements SensorEventListener {
     }
 
     /**
+     * @return the latest smoothed yaw value. The basis is defined by the current
+     * {@link #getOrientationMode()}.
+     */
+    public float getLatestYaw(){
+        return latestYaw;
+    }
+    /**
+     * @return the latest smoothed pitch value. The basis is defined by the current
+     * {@link #getOrientationMode()}.
+     */
+    public float getLatestPitch(){
+        return latestPitch;
+    }
+    /**
+     * @return the latest smoothed roll value. The basis is defined by the current
+     * {@link #getOrientationMode()}.
+     */
+    public float getLatestRoll(){
+        return latestRoll;
+    }
+
+    /**
      * Manually resets the orientation origin. Has no effect unless {@link #getOrientationMode()}
      * is {@link com.jmedeisis.windowview.WindowView.OrientationMode#RELATIVE}.
      */
@@ -610,9 +632,9 @@ public class WindowView extends ImageView implements SensorEventListener {
     }
 
     /*
-	 * DEBUG
-	 * ---------------------------------------------------------------------------------------------
-	 */
+     * DEBUG
+     * ---------------------------------------------------------------------------------------------
+     */
     /**
      * Enables/disables on-screen debug information.
      * @param debugTilt if true, displays on-screen information about the current tilt values and limits.
