@@ -2,7 +2,7 @@
 <resources>
 
     <string name="app_name">WindowView Demo</string>
-    <string name="action_lock_portrait">Lock Portrait</string>
+    <string name="action_lock_portrait">Lock Screen Portrait</string>
     <string name="action_debug_tilt">Debug Tilt</string>
     <string name="action_debug_image">Debug Image</string>
     <string name="action_reset_orientation">Reset Orientation</string>
