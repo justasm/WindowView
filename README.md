@@ -43,5 +43,4 @@ reduce jitter at the expense of responsiveness.
 
 License
 -------
-This project is licensed under the terms of the MIT license. You may find a copy of the license
-in the included LICENSE file.
+WindowView is licensed under the terms of the [MIT License](LICENSE.txt).
