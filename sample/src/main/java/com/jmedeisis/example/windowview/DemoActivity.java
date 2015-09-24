@@ -4,7 +4,7 @@ import android.annotation.TargetApi;
 import android.content.pm.ActivityInfo;
 import android.os.Build;
 import android.os.Bundle;
-import android.support.v7.app.ActionBarActivity;
+import android.support.v7.app.AppCompatActivity;
 import android.view.Gravity;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -13,7 +13,7 @@ import android.widget.Toast;
 
 import com.jmedeisis.windowview.WindowView;
 
-public class DemoActivity extends ActionBarActivity {
+public class DemoActivity extends AppCompatActivity {
 
     private static final String ORIENTATION = "orientation";
     private static final String DEBUG_TILT = "debugTilt";
