@@ -1,11 +1,13 @@
 package com.jmedeisis.windowview;
 
+import android.annotation.TargetApi;
 import android.content.Context;
 import android.content.res.TypedArray;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.Typeface;
+import android.os.Build;
 import android.support.annotation.NonNull;
 import android.util.AttributeSet;
 import android.util.Log;
@@ -82,19 +84,30 @@ public class WindowView extends ImageView implements TiltSensor.TiltListener {
     private boolean debugImage = false;
     private static final boolean DEBUG_LIFECYCLE = false;
     private final static int DEBUG_TEXT_SIZE = 32;
-    private final Paint debugTextPaint;
+    private Paint debugTextPaint;
 
     public WindowView(Context context) {
-        this(context, null);
+        super(context);
+        init(context, null);
     }
 
     public WindowView(Context context, AttributeSet attrs) {
-        this(context, attrs, 0);
+        super(context, attrs);
+        init(context, attrs);
     }
 
-    public WindowView(Context context, AttributeSet attrs, int defStyle) {
-        super(context, attrs, defStyle);
+    public WindowView(Context context, AttributeSet attrs, int defStyleAttr) {
+        super(context, attrs, defStyleAttr);
+        init(context, attrs);
+    }
 
+    @TargetApi(Build.VERSION_CODES.LOLLIPOP)
+    public WindowView(Context context, AttributeSet attrs, int defStyleAttr, int defStyleRes) {
+        super(context, attrs, defStyleAttr, defStyleRes);
+        init(context, attrs);
+    }
+
+    protected void init(Context context, AttributeSet attrs){
         maxPitch = DEFAULT_MAX_PITCH;
         maxRoll = DEFAULT_MAX_ROLL;
         verticalOrigin = DEFAULT_VERTICAL_ORIGIN;
