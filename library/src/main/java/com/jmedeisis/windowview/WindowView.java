@@ -315,6 +315,7 @@ public class WindowView extends ImageView implements TiltSensor.TiltListener {
 
     @Override
     protected void onSizeChanged(int w, int h, int oldw, int oldh){
+        super.onSizeChanged(w, h, oldw, oldh);
         heightMatches = !widthRatioGreater(w, h, getDrawable().getIntrinsicWidth(),
                 getDrawable().getIntrinsicHeight());
         widthDifference = getScaledImageWidth() - getWidth();
@@ -386,28 +387,6 @@ public class WindowView extends ImageView implements TiltSensor.TiltListener {
 
     public void removeTiltListener(TiltSensor.TiltListener listener){
         sensor.removeListener(listener);
-    }
-
-    /**
-     * @return the latest smoothed yaw value. The basis is defined by the current
-     * {@link #getOrientationMode()}.
-     */
-    public float getLatestYaw(){
-        return latestYaw;
-    }
-    /**
-     * @return the latest smoothed pitch value. The basis is defined by the current
-     * {@link #getOrientationMode()}.
-     */
-    public float getLatestPitch(){
-        return latestPitch;
-    }
-    /**
-     * @return the latest smoothed roll value. The basis is defined by the current
-     * {@link #getOrientationMode()}.
-     */
-    public float getLatestRoll(){
-        return latestRoll;
     }
 
     /**

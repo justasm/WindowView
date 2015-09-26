@@ -287,7 +287,7 @@ public class TiltSensor implements SensorEventListener {
     }
 
     /**
-     * @param immediate if true, low-pass filters are restarted to new origin immediately.
+     * @param immediate if true, any sensor data filters are reset to new origin immediately.
      *                  If false, values transition smoothly to new origin.
      */
     public void resetOrigin(boolean immediate){
