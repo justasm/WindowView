@@ -1,0 +1,373 @@
+package com.jmedeisis.windowview.sensor;
+
+import android.content.Context;
+import android.hardware.Sensor;
+import android.hardware.SensorEvent;
+import android.hardware.SensorEventListener;
+import android.hardware.SensorManager;
+import android.util.Log;
+import android.view.Display;
+import android.view.Surface;
+import android.view.WindowManager;
+
+import com.jmedeisis.windowview.WindowView;
+
+import java.util.ArrayList;
+import java.util.List;
+
+/**
+ * Interprets sensor data to calculate device tilt in terms of yaw, pitch and roll.
+ * Requires one of the following sensor combinations to be accessible via {@link SensorManager}:
+ * <ul>
+ * <li>TYPE_ROTATION_VECTOR</li>
+ * <li>TYPE_MAGNETIC_FIELD + TYPE_GRAVITY</li>
+ * <li>TYPE_MAGNETIC_FIELD + TYPE_ACCELEROMETER</li>
+ * </ul>
+ */
+public class TiltSensor implements SensorEventListener {
+    // 1 radian = 180 / PI = 57.2957795 degrees
+    private static final float DEGREES_PER_RADIAN = 57.2957795f;
+
+    private final SensorManager sensorManager;
+
+    /** @see {@link Display#getRotation()}. */
+    private final int screenRotation;
+
+    private boolean relativeTilt;
+
+    /** Interface for callback to be invoked when new orientation values are available. */
+    public interface TiltListener {
+        void onTiltUpdate(float yaw, float pitch, float roll);
+    }
+    private List<TiltListener> listeners;
+
+    private final float[] rotationMatrix = new float[9];
+    private final float[] rotationMatrixTemp = new float[9];
+    private final float[] rotationMatrixOrigin = new float[9];
+    /** [w, x, y, z] */
+    private final float[] latestQuaternion = new float[4];
+    /** [w, x, y, z] */
+    private final float[] invQuaternionOrigin = new float[4];
+    /** [w, x, y, z] */
+    private final float[] rotationQuaternion = new float[4];
+    private final float[] latestAccelerations = new float[3];
+    private final float[] latestMagFields = new float[3];
+    private final float[] orientation = new float[3];
+    private boolean haveGravData = false;
+    private boolean haveAccelData = false;
+    private boolean haveMagData = false;
+    private boolean haveRotOrigin = false;
+    private boolean haveQuatOrigin = false;
+    private boolean haveRotVecData = false;
+
+    private final WindowView.Filter yawFilter;
+    private final WindowView.Filter pitchFilter;
+    private final WindowView.Filter rollFilter;
+
+    private static final int NUM_FILTER_SAMPLES_HIGH_ACC = 10;
+    private static final float LOW_PASS_COEFF_HIGH_ACC = 0.7f;
+    private static final int NUM_FILTER_SAMPLES_LOW_ACC = 15;
+    private static final float LOW_PASS_COEFF_LOW_ACC = 0.5f;
+
+    public TiltSensor(Context context, boolean trackRelativeOrientation){
+        listeners = new ArrayList<>();
+
+        yawFilter = new WindowView.Filter(NUM_FILTER_SAMPLES_LOW_ACC, LOW_PASS_COEFF_LOW_ACC, 0);
+        pitchFilter = new WindowView.Filter(NUM_FILTER_SAMPLES_LOW_ACC, LOW_PASS_COEFF_LOW_ACC, 0);
+        rollFilter = new WindowView.Filter(NUM_FILTER_SAMPLES_LOW_ACC, LOW_PASS_COEFF_LOW_ACC, 0);
+
+        sensorManager = (SensorManager) context.getSystemService(Context.SENSOR_SERVICE);
+
+        screenRotation = ((WindowManager) context.getSystemService(Context.WINDOW_SERVICE))
+                .getDefaultDisplay().getRotation();
+
+        this.relativeTilt = trackRelativeOrientation;
+    }
+
+    public void startTracking(){
+        sensorManager.registerListener(this, sensorManager.getDefaultSensor(Sensor.TYPE_ROTATION_VECTOR),
+                SensorManager.SENSOR_DELAY_GAME);
+        sensorManager.registerListener(this, sensorManager.getDefaultSensor(Sensor.TYPE_MAGNETIC_FIELD),
+                SensorManager.SENSOR_DELAY_GAME);
+        sensorManager.registerListener(this, sensorManager.getDefaultSensor(Sensor.TYPE_GRAVITY),
+                SensorManager.SENSOR_DELAY_GAME);
+        sensorManager.registerListener(this, sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER),
+                SensorManager.SENSOR_DELAY_GAME);
+    }
+
+    public void stopTracking(){
+        sensorManager.unregisterListener(this);
+        yawFilter.reset(0);
+        pitchFilter.reset(0);
+        rollFilter.reset(0);
+    }
+
+    public void addListener(TiltListener listener){
+        listeners.add(listener);
+    }
+
+    public void removeListener(TiltListener listener){
+        listeners.remove(listener);
+    }
+
+    public void setTrackRelativeOrientation(boolean trackRelative){
+        this.relativeTilt = trackRelative;
+    }
+
+    /** @see {@link Display#getRotation()}*/
+    public int getScreenRotation(){
+        return screenRotation;
+    }
+
+    private void setFilterResponse(boolean highQualityData){
+        yawFilter.setSampleCount(highQualityData ? NUM_FILTER_SAMPLES_HIGH_ACC : NUM_FILTER_SAMPLES_LOW_ACC);
+        yawFilter.setFactor(highQualityData ? LOW_PASS_COEFF_HIGH_ACC : LOW_PASS_COEFF_LOW_ACC);
+        pitchFilter.setSampleCount(highQualityData ? NUM_FILTER_SAMPLES_HIGH_ACC : NUM_FILTER_SAMPLES_LOW_ACC);
+        pitchFilter.setFactor(highQualityData ? LOW_PASS_COEFF_HIGH_ACC : LOW_PASS_COEFF_LOW_ACC);
+        rollFilter.setSampleCount(highQualityData ? NUM_FILTER_SAMPLES_HIGH_ACC : NUM_FILTER_SAMPLES_LOW_ACC);
+        rollFilter.setFactor(highQualityData ? LOW_PASS_COEFF_HIGH_ACC : LOW_PASS_COEFF_LOW_ACC);
+    }
+
+    @Override
+    public void onSensorChanged(SensorEvent event) {
+        switch (event.sensor.getType()){
+            case Sensor.TYPE_ROTATION_VECTOR:
+                SensorManager.getQuaternionFromVector(latestQuaternion, event.values);
+                if(!haveRotVecData){
+                    Log.d("TiltSensor", "Rotation vector sensor present, choosing ROTATION_VECTOR.");
+                    setFilterResponse(true);
+                }
+                haveRotVecData = true;
+                break;
+            case Sensor.TYPE_GRAVITY:
+                if(haveRotVecData){
+                    // rotation vector sensor data is better
+                    sensorManager.unregisterListener(this,
+                            sensorManager.getDefaultSensor(Sensor.TYPE_GRAVITY));
+                    break;
+                }
+                System.arraycopy(event.values, 0, latestAccelerations, 0, 3);
+                if(!haveGravData) Log.d("TiltSensor", "Gravity sensor present, choosing GRAVITY.");
+                haveGravData = true;
+                break;
+            case Sensor.TYPE_ACCELEROMETER:
+                if(haveGravData || haveRotVecData){
+                    // rotation vector / gravity sensor data is better!
+                    // let's not listen to the accelerometer anymore
+                    sensorManager.unregisterListener(this,
+                            sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER));
+                    break;
+                }
+                System.arraycopy(event.values, 0, latestAccelerations, 0, 3);
+                if(!haveAccelData) Log.d("TiltSensor", "Accelerometer present, choosing ACCELEROMETER.");
+                haveAccelData = true;
+                break;
+            case Sensor.TYPE_MAGNETIC_FIELD:
+                if(haveRotVecData){
+                    // rotation vector sensor data is better
+                    sensorManager.unregisterListener(this,
+                            sensorManager.getDefaultSensor(Sensor.TYPE_MAGNETIC_FIELD));
+                    break;
+                }
+                System.arraycopy(event.values, 0, latestMagFields, 0, 3);
+                haveMagData = true;
+                break;
+        }
+
+        if(haveDataNecessaryToComputeOrientation()){
+            computeOrientation();
+        }
+    }
+
+    /** @return true if both {@link #latestAccelerations} and {@link #latestMagFields} have valid values. */
+    private boolean haveDataNecessaryToComputeOrientation(){
+        return haveRotVecData || ((haveGravData || haveAccelData) && haveMagData);
+    }
+
+    /**
+     * Computes the latest rotation, remaps it according to the current {@link #screenRotation},
+     * and stores it in {@link #rotationMatrix}.
+     * <p>
+     * Should only be called if {@link #haveDataNecessaryToComputeOrientation()} returns true and
+     * {@link #haveRotVecData} is false, else result may be undefined.
+     * @return true if rotation was retrieved and recalculated, false otherwise.
+     */
+    private boolean computeRotationMatrix(){
+        if(SensorManager.getRotationMatrix(rotationMatrixTemp, null, latestAccelerations, latestMagFields)){
+            switch(screenRotation){
+                case Surface.ROTATION_0:
+                    SensorManager.remapCoordinateSystem(rotationMatrixTemp,
+                            SensorManager.AXIS_X, SensorManager.AXIS_Y, rotationMatrix);
+                    break;
+                case Surface.ROTATION_90:
+                    //noinspection SuspiciousNameCombination
+                    SensorManager.remapCoordinateSystem(rotationMatrixTemp,
+                            SensorManager.AXIS_Y, SensorManager.AXIS_MINUS_X, rotationMatrix);
+                    break;
+                case Surface.ROTATION_180:
+                    SensorManager.remapCoordinateSystem(rotationMatrixTemp,
+                            SensorManager.AXIS_MINUS_X, SensorManager.AXIS_MINUS_Y, rotationMatrix);
+                    break;
+                case Surface.ROTATION_270:
+                    //noinspection SuspiciousNameCombination
+                    SensorManager.remapCoordinateSystem(rotationMatrixTemp,
+                            SensorManager.AXIS_MINUS_Y, SensorManager.AXIS_X, rotationMatrix);
+                    break;
+            }
+            return true;
+        }
+        return false;
+    }
+
+    /**
+     * Computes the latest orientation and notifies any {@link TiltListener}s.
+     */
+    private void computeOrientation(){
+        boolean updated = false;
+        float latestYaw = 0;
+        float latestPitch = 0;
+        float latestRoll = 0;
+
+        if(haveRotVecData){
+            remapQuaternionToScreenRotation(latestQuaternion, screenRotation);
+            if(relativeTilt) {
+                if (!haveQuatOrigin) {
+                    System.arraycopy(latestQuaternion, 0, invQuaternionOrigin, 0, 4);
+                    invertQuaternion(invQuaternionOrigin);
+                    haveQuatOrigin = true;
+                }
+                multQuaternions(rotationQuaternion, invQuaternionOrigin, latestQuaternion);
+            } else {
+                System.arraycopy(latestQuaternion, 0, rotationQuaternion, 0, 4);
+            }
+
+            // https://en.wikipedia.org/wiki/Conversion_between_quaternions_and_Euler_angles
+            final float q0 = rotationQuaternion[0]; // w
+            final float q1 = rotationQuaternion[1]; // x
+            final float q2 = rotationQuaternion[2]; // y
+            final float q3 = rotationQuaternion[3]; // z
+
+            float rotXRad = (float) Math.atan2(2 * (q0 * q1 + q2 * q3), 1 - 2 * (q1 * q1 + q2 * q2));
+            float rotYRad = (float) Math.asin(2 * (q0 * q2 - q3 * q1));
+            float rotZRad = (float) Math.atan2(2 * (q0 * q3 + q1 * q2), 1 - 2 * (q2 * q2 + q3 * q3));
+
+            // constructed to match output of SensorManager#getOrientation
+            final float yaw = -rotZRad * DEGREES_PER_RADIAN;
+            final float pitch = -rotXRad * DEGREES_PER_RADIAN;
+            final float roll = rotYRad * DEGREES_PER_RADIAN;
+
+            latestYaw = yawFilter.push(yaw);
+            latestPitch = pitchFilter.push(pitch);
+            latestRoll = rollFilter.push(roll);
+            updated = true;
+        } else if(computeRotationMatrix()){
+            if(relativeTilt) {
+                if(!haveRotOrigin){
+                    System.arraycopy(rotationMatrix, 0, rotationMatrixOrigin, 0, 9);
+                    haveRotOrigin = true;
+                }
+                // get yaw / pitch / roll relative to original rotation
+                SensorManager.getAngleChange(orientation, rotationMatrix, rotationMatrixOrigin);
+            } else {
+                // get absolute yaw / pitch / roll
+                SensorManager.getOrientation(rotationMatrix, orientation);
+            }
+            /*
+             * [0] : yaw, rotation around z axis
+             * [1] : pitch, rotation around x axis
+             * [2] : roll, rotation around y axis
+             */
+            final float yaw = orientation[0] * DEGREES_PER_RADIAN;
+            final float pitch = orientation[1] * DEGREES_PER_RADIAN;
+            final float roll = orientation[2] * DEGREES_PER_RADIAN;
+
+            latestYaw = yawFilter.push(yaw);
+            latestPitch = pitchFilter.push(pitch);
+            latestRoll = rollFilter.push(roll);
+            updated = true;
+        }
+
+        if(!updated) return;
+        for(int i = 0; i < listeners.size(); i++){
+            listeners.get(i).onTiltUpdate(latestYaw, latestPitch, latestRoll);
+        }
+    }
+
+    /**
+     * @param immediate if true, low-pass filters are restarted to new origin immediately.
+     *                  If false, values transition smoothly to new origin.
+     */
+    public void resetOrigin(boolean immediate){
+        haveRotOrigin = false;
+        haveQuatOrigin = false;
+        if(immediate){
+            yawFilter.reset(0);
+            pitchFilter.reset(0);
+            rollFilter.reset(0);
+        }
+    }
+
+    @Override
+    public void onAccuracyChanged(Sensor sensor, int accuracy) {
+
+    }
+
+    /**
+     * Please drop me a PM if you know of a more elegant way to accomplish this - Justas
+     * @param q [w, x, y, z]
+     * @param screenRotation see {@link Display#getRotation()}
+     */
+    private static void remapQuaternionToScreenRotation(float[] q, int screenRotation){
+        final float x = q[1];
+        final float y = q[2];
+        switch (screenRotation){
+            case Surface.ROTATION_0:
+                break;
+            case Surface.ROTATION_90:
+                q[1] = -y;
+                q[2] = x;
+                break;
+            case Surface.ROTATION_180:
+                q[1] = -x;
+                q[2] = -y;
+                break;
+            case Surface.ROTATION_270:
+                q[1] = y;
+                q[2] = -x;
+                break;
+        }
+    }
+
+    /**
+     *
+     * @param qOut [w, x, y, z] result.
+     * @param q1 [w, x, y, z] left.
+     * @param q2 [w, x, y, z] right.
+     */
+    private static void multQuaternions(float[] qOut, float[] q1, float[] q2){
+        // multiply quaternions
+        final float a = q1[0];
+        final float b = q1[1];
+        final float c = q1[2];
+        final float d = q1[3];
+
+        final float e = q2[0];
+        final float f = q2[1];
+        final float g = q2[2];
+        final float h = q2[3];
+
+        qOut[0] = a * e - b * f - c * g - d * h;
+        qOut[1] = b * e + a * f + c * h - d * g;
+        qOut[2] = a * g - b * h + c * e + d * f;
+        qOut[3] = a * h + b * g - c * f + d * e;
+    }
+
+    /**
+     * @param q [w, x, y, z]
+     */
+    private static void invertQuaternion(float[] q){
+        for (int i = 1; i < 4; i++) {
+            q[i] = -q[i]; // invert quaternion
+        }
+    }
+}

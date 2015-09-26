@@ -12,6 +12,7 @@ import android.view.View;
 import android.widget.Toast;
 
 import com.jmedeisis.windowview.WindowView;
+import com.jmedeisis.windowview.sensor.TiltSensor;
 
 public class DemoActivity extends AppCompatActivity {
 
@@ -79,16 +80,16 @@ public class DemoActivity extends AppCompatActivity {
             final View actionView = View.inflate(this, R.layout.device_compass, null);
             final View xy = actionView.findViewById(R.id.compass_xy);
             final View z = actionView.findViewById(R.id.compass_z);
-            windowView1.setOnNewOrientationListener(new WindowView.OnNewOrientationListener() {
+            windowView1.addTiltListener(new TiltSensor.TiltListener() {
                 @Override
-                public void onNewOrientation(WindowView windowView) {
-                    xy.setRotation(windowView.getLatestYaw());
-                    xy.setRotationX(windowView.getLatestPitch());
-                    xy.setRotationY(windowView.getLatestRoll());
+                public void onTiltUpdate(float yaw, float pitch, float roll) {
+                    xy.setRotation(yaw);
+                    xy.setRotationX(pitch);
+                    xy.setRotationY(roll);
 
-                    z.setRotation(windowView.getLatestYaw());
-                    z.setRotationX(windowView.getLatestPitch());
-                    z.setRotationY(windowView.getLatestRoll() - 90);
+                    z.setRotation(yaw);
+                    z.setRotationX(pitch);
+                    z.setRotationY(roll - 90);
                 }
             });
             actionView.setOnClickListener(new View.OnClickListener() {
@@ -119,8 +120,8 @@ public class DemoActivity extends AppCompatActivity {
     }
 
     private void resetWindowViewOrientationOrigins(){
-        windowView1.resetOrientationOrigin();
-        windowView2.resetOrientationOrigin();
+        windowView1.resetOrientationOrigin(false);
+        windowView2.resetOrientationOrigin(false);
         Toast.makeText(DemoActivity.this, R.string.hint_orientation_reset, Toast.LENGTH_SHORT).show();
     }
 

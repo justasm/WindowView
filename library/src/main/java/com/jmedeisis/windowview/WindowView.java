@@ -6,54 +6,26 @@ import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.Typeface;
-import android.hardware.Sensor;
-import android.hardware.SensorEvent;
-import android.hardware.SensorEventListener;
-import android.hardware.SensorManager;
 import android.support.annotation.NonNull;
 import android.util.AttributeSet;
 import android.util.Log;
 import android.view.Surface;
-import android.view.WindowManager;
 import android.widget.ImageView;
+
+import com.jmedeisis.windowview.sensor.TiltSensor;
 
 /**
  * An ImageView that automatically pans in response to device tilt.
  * Currently only supports {@link android.widget.ImageView.ScaleType#CENTER_CROP}.
  */
-public class WindowView extends ImageView implements SensorEventListener {
+public class WindowView extends ImageView implements TiltSensor.TiltListener {
     private static final String LOG_TAG = "WindowView";
-
-    private final SensorManager sensorManager;
 
     private float latestYaw;
     private float latestPitch;
     private float latestRoll;
 
-    // 1 radian = 57.2957795 degrees
-    private static final float DEGREES_PER_RADIAN = 57.2957795f;
-
-    private static final int NUM_FILTER_SAMPLES = 15;
-    private static final float LOW_PASS_COEFF = 0.5f;
-    private final Filter yawFilter;
-    private final Filter pitchFilter;
-    private final Filter rollFilter;
-
-    /** @see {@link android.view.Display#getRotation()}. */
-    private final int screenRotation;
-
-    private final float[] rotationMatrix = new float[9];
-    private final float[] rotationMatrixTemp = new float[9];
-    private final float[] rotationMatrixOrigin = new float[9];
-    private final float[] orientation = new float[3];
-    private final float[] orientationOrigin = new float[3];
-    private final float[] latestAccelerations = new float[3];
-    private final float[] latestMagFields = new float[3];
-
-    private boolean haveOrigin = false;
-    private boolean haveGravData = false;
-    private boolean haveAccelData = false;
-    private boolean haveMagData = false;
+    private TiltSensor sensor;
 
     private static final float DEFAULT_MAX_PITCH = 30;
     private static final float DEFAULT_MAX_ROLL = 30;
@@ -64,18 +36,6 @@ public class WindowView extends ImageView implements SensorEventListener {
     private float horizontalOrigin;
     private float verticalOrigin;
 
-    /** Interface definition for a callback to be invoked when new orientation values are processed. */
-    public interface OnNewOrientationListener {
-        /**
-         * Called when new orientation values are present.
-         * @see com.jmedeisis.windowview.WindowView#getLatestYaw()
-         * @see com.jmedeisis.windowview.WindowView#getLatestPitch()
-         * @see com.jmedeisis.windowview.WindowView#getLatestRoll()
-         */
-        void onNewOrientation(WindowView windowView);
-    }
-    private OnNewOrientationListener orientationListener;
-
     /** Determines the basis in which device orientation is measured. */
     public enum OrientationMode {
         /** Measures absolute yaw / pitch / roll (i.e. relative to the world). */
@@ -83,7 +43,7 @@ public class WindowView extends ImageView implements SensorEventListener {
         /**
          * Measures yaw / pitch / roll relative to the starting orientation.
          * The starting orientation is determined upon receiving the first sensor data,
-         * but can be manually reset at any time using {@link #resetOrientationOrigin()}.
+         * but can be manually reset at any time using {@link #resetOrientationOrigin(boolean)}.
          */
         RELATIVE
     }
@@ -160,14 +120,8 @@ public class WindowView extends ImageView implements SensorEventListener {
             a.recycle();
         }
 
-        sensorManager = (SensorManager) context.getSystemService(Context.SENSOR_SERVICE);
-
-        yawFilter = new Filter(NUM_FILTER_SAMPLES, LOW_PASS_COEFF, 0);
-        pitchFilter = new Filter(NUM_FILTER_SAMPLES, LOW_PASS_COEFF, 0);
-        rollFilter = new Filter(NUM_FILTER_SAMPLES, LOW_PASS_COEFF, 0);
-
-        screenRotation = ((WindowManager) context.getSystemService(Context.WINDOW_SERVICE))
-                .getDefaultDisplay().getRotation();
+        sensor = new TiltSensor(context, orientationMode == OrientationMode.RELATIVE);
+        sensor.addListener(this);
 
         debugTextPaint = new Paint();
         debugTextPaint.setColor(Color.MAGENTA);
@@ -192,39 +146,24 @@ public class WindowView extends ImageView implements SensorEventListener {
         super.onWindowFocusChanged(hasWindowFocus);
         if(DEBUG_LIFECYCLE) Log.d(LOG_TAG, "onWindowFocusChanged(), hasWindowFocus: " + hasWindowFocus);
         if(hasWindowFocus){
-            registerListeners();
+            sensor.startTracking();
         } else {
-            unregisterListeners();
+            sensor.stopTracking();
         }
-    }
-
-    private void registerListeners(){
-        if(DEBUG_LIFECYCLE) Log.d(LOG_TAG, "Started listening to sensor events.");
-        sensorManager.registerListener(this, sensorManager.getDefaultSensor(Sensor.TYPE_MAGNETIC_FIELD),
-                SensorManager.SENSOR_DELAY_GAME);
-        sensorManager.registerListener(this, sensorManager.getDefaultSensor(Sensor.TYPE_GRAVITY),
-                SensorManager.SENSOR_DELAY_GAME);
-        sensorManager.registerListener(this, sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER),
-                SensorManager.SENSOR_DELAY_GAME);
-    }
-
-    private void unregisterListeners(){
-        if(DEBUG_LIFECYCLE) Log.d(LOG_TAG, "Stopped listening to sensor events.");
-        sensorManager.unregisterListener(this);
     }
 
     @Override
     protected void onAttachedToWindow(){
         super.onAttachedToWindow();
         if(DEBUG_LIFECYCLE) Log.d(LOG_TAG, "onAttachedToWindow()");
-        registerListeners();
+        sensor.startTracking();
     }
 
     @Override
     protected void onDetachedFromWindow(){
         super.onDetachedFromWindow();
         if(DEBUG_LIFECYCLE) Log.d(LOG_TAG, "onDetachedFromWindow()");
-        unregisterListeners();
+        sensor.stopTracking();
     }
 
     /*
@@ -280,12 +219,12 @@ public class WindowView extends ImageView implements SensorEventListener {
         if(debugTilt){
             debugText(canvas, i++, orientationMode + " orientationMode");
 
-            if(haveOrigin){
+            /*if(haveOrigin){
                 SensorManager.getOrientation(rotationMatrixOrigin, orientationOrigin);
                 debugText(canvas, i++, "org yaw   " + orientationOrigin[0]*DEGREES_PER_RADIAN);
                 debugText(canvas, i++, "org pitch " + orientationOrigin[1]*DEGREES_PER_RADIAN);
                 debugText(canvas, i++, "org roll  " + orientationOrigin[2]*DEGREES_PER_RADIAN);
-            }
+            }*/
 
             debugText(canvas, i++, "yaw   " + latestYaw);
             debugText(canvas, i++, "pitch " + latestPitch);
@@ -297,7 +236,7 @@ public class WindowView extends ImageView implements SensorEventListener {
             debugText(canvas, i++, "HOR ORIGIN " + horizontalOrigin);
             debugText(canvas, i++, "VER ORIGIN " + verticalOrigin);
 
-            switch(screenRotation){
+            switch(sensor.getScreenRotation()){
                 case Surface.ROTATION_0:
                     debugText(canvas, i++, "ROTATION_0");
                     break;
@@ -430,123 +369,23 @@ public class WindowView extends ImageView implements SensorEventListener {
     }
 
     /*
-     * SENSOR DATA ACQUISITION / PROCESSING
+     * SENSOR DATA
      * ---------------------------------------------------------------------------------------------
      */
     @Override
-    public void onAccuracyChanged(Sensor sensor, int accuracy) {
-        // nothing to do here..
+    public void onTiltUpdate(float yaw, float pitch, float roll) {
+        this.latestYaw = yaw;
+        this.latestPitch = pitch;
+        this.latestRoll = roll;
+        invalidate();
     }
 
-    @Override
-    public void onSensorChanged(SensorEvent event) {
-        switch(event.sensor.getType()){
-            case Sensor.TYPE_GRAVITY:
-                System.arraycopy(event.values, 0, latestAccelerations, 0, 3);
-                haveGravData = true;
-                break;
-            case Sensor.TYPE_ACCELEROMETER:
-                if(haveGravData){
-                    // gravity sensor data is better! let's not listen to the accelerometer anymore
-                    sensorManager.unregisterListener(this,
-                            sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER));
-                    break;
-                }
-                System.arraycopy(event.values, 0, latestAccelerations, 0, 3);
-                haveAccelData = true;
-                break;
-            case Sensor.TYPE_MAGNETIC_FIELD:
-                System.arraycopy(event.values, 0, latestMagFields, 0, 3);
-                haveMagData = true;
-                break;
-        }
-
-        if(haveDataNecessaryToComputeOrientation()){
-            computeOrientation();
-        }
+    public void addTiltListener(TiltSensor.TiltListener listener){
+        sensor.addListener(listener);
     }
 
-    /** @return true if both {@link #latestAccelerations} and {@link #latestMagFields} have valid values. */
-    private boolean haveDataNecessaryToComputeOrientation(){
-        return (haveGravData || haveAccelData) && haveMagData;
-    }
-
-    /**
-     * Computes the latest rotation, and stores it in {@link #rotationMatrix}.<p>
-     * Should only be called if {@link #haveDataNecessaryToComputeOrientation()} returns true,
-     * else result may be undefined.
-     * @return true if rotation was retrieved and recalculated, false otherwise.
-     */
-    @SuppressWarnings("SuspiciousNameCombination")
-    private boolean computeRotationMatrix(){
-        if(SensorManager.getRotationMatrix(rotationMatrixTemp, null, latestAccelerations, latestMagFields)){
-            switch(screenRotation){
-                case Surface.ROTATION_0:
-                    SensorManager.remapCoordinateSystem(rotationMatrixTemp,
-                            SensorManager.AXIS_X, SensorManager.AXIS_Y, rotationMatrix);
-                    break;
-                case Surface.ROTATION_90:
-                    SensorManager.remapCoordinateSystem(rotationMatrixTemp,
-                            SensorManager.AXIS_Y, SensorManager.AXIS_MINUS_X, rotationMatrix);
-                    break;
-                case Surface.ROTATION_180:
-                    SensorManager.remapCoordinateSystem(rotationMatrixTemp,
-                            SensorManager.AXIS_MINUS_X, SensorManager.AXIS_MINUS_Y, rotationMatrix);
-                    break;
-                case Surface.ROTATION_270:
-                    SensorManager.remapCoordinateSystem(rotationMatrixTemp,
-                            SensorManager.AXIS_MINUS_Y, SensorManager.AXIS_X, rotationMatrix);
-                    break;
-            }
-            return true;
-        }
-        return false;
-    }
-
-    /**
-     * Computes the latest orientation and stores it in {@link #orientation}.
-     * Also updates {@link #latestYaw}, {@link #latestPitch} and {@link #latestRoll}
-     * as filtered versions of {@link #orientation}.
-     */
-    private void computeOrientation(){
-        synchronized(rotationMatrix){
-            if(computeRotationMatrix()){
-                switch(orientationMode){
-                    case ABSOLUTE:
-                        // get absolute yaw / pitch / roll
-                        SensorManager.getOrientation(rotationMatrix, orientation);
-                        break;
-                    case RELATIVE:
-                        if(!haveOrigin){
-                            updateOrigin();
-                        }
-
-                        // get yaw / pitch / roll relative to original rotation
-                        SensorManager.getAngleChange(orientation, rotationMatrix, rotationMatrixOrigin);
-                        break;
-                }
-				
-				/* [0] : yaw, rotation around z axis
-				 * [1] : pitch, rotation around x axis
-				 * [2] : roll, rotation around y axis */
-                final float yaw = orientation[0] * DEGREES_PER_RADIAN;
-                final float pitch = orientation[1] * DEGREES_PER_RADIAN;
-                final float roll = orientation[2] * DEGREES_PER_RADIAN;
-
-                latestYaw = yawFilter.push(yaw);
-                latestPitch = pitchFilter.push(pitch);
-                latestRoll = rollFilter.push(roll);
-
-                if(null != orientationListener) orientationListener.onNewOrientation(this);
-
-                // redraw image
-                invalidate();
-            }
-        }
-    }
-
-    public void setOnNewOrientationListener(OnNewOrientationListener orientationListener){
-        this.orientationListener = orientationListener;
+    public void removeTiltListener(TiltSensor.TiltListener listener){
+        sensor.removeListener(listener);
     }
 
     /**
@@ -574,26 +413,11 @@ public class WindowView extends ImageView implements SensorEventListener {
     /**
      * Manually resets the orientation origin. Has no effect unless {@link #getOrientationMode()}
      * is {@link com.jmedeisis.windowview.WindowView.OrientationMode#RELATIVE}.
+     *
+     * @param immediate if false, the sensor values smoothly interpolate to the new origin.
      */
-    public boolean resetOrientationOrigin(){
-        if(haveDataNecessaryToComputeOrientation()){
-            synchronized(rotationMatrix){
-                if(computeRotationMatrix()){
-                    updateOrigin();
-                    return true;
-                }
-            }
-        }
-        return false;
-    }
-
-    /**
-     * Resets the internal orientation origin matrix.
-     * {@link #computeRotationMatrix()} must have been called prior.
-     */
-    private void updateOrigin(){
-        System.arraycopy(rotationMatrix, 0, rotationMatrixOrigin, 0, 9);
-        haveOrigin = true;
+    public void resetOrientationOrigin(boolean immediate){
+        sensor.resetOrigin(immediate);
     }
 
     /**
@@ -602,7 +426,8 @@ public class WindowView extends ImageView implements SensorEventListener {
      */
     public void setOrientationMode(OrientationMode orientationMode){
         this.orientationMode = orientationMode;
-        haveOrigin = false;
+        sensor.setTrackRelativeOrientation(orientationMode == OrientationMode.RELATIVE);
+        sensor.resetOrigin(true);
     }
 
     public OrientationMode getOrientationMode(){
@@ -610,7 +435,7 @@ public class WindowView extends ImageView implements SensorEventListener {
     }
 
     /** Ring buffer low-pass filter. */
-    private class Filter {
+    public static class Filter {
         float[] buffer;
         float sum;
         int lastIndex;
@@ -620,6 +445,29 @@ public class WindowView extends ImageView implements SensorEventListener {
         public Filter(int samples, float factor, float initialValue){
             buffer = new float[samples];
             this.factor = factor;
+            lastIndex = 0;
+            reset(initialValue);
+        }
+
+        /**
+         * @param factor 0-1. Calculated as dt / (t + dt), where t is the system's time constant and dt
+         *               is the sampling period, i.e. the rate that new values are delivered via
+         *               {@link #push(float)}.
+         *               The closer to 0, the greater the inertia, i.e. the filter responds more slowly
+         *               to new input values.
+         */
+        public void setFactor(float factor){
+            this.factor = factor;
+        }
+
+        /**
+         * @param samples > 0.
+         *                The larger the number of samples N, the greater the inertia, i.e. the
+         *                filter responds more slowly to new input values.
+         */
+        public void setSampleCount(int samples){
+            float initialValue = get();
+            buffer = new float[samples];
             lastIndex = 0;
             reset(initialValue);
         }
