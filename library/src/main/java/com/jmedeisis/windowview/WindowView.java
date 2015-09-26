@@ -29,14 +29,14 @@ public class WindowView extends ImageView implements TiltSensor.TiltListener {
 
     private TiltSensor sensor;
 
-    private static final float DEFAULT_MAX_PITCH = 30;
-    private static final float DEFAULT_MAX_ROLL = 30;
-    private static final float DEFAULT_HORIZONTAL_ORIGIN = 0;
-    private static final float DEFAULT_VERTICAL_ORIGIN = 0;
-    private float maxPitch;
-    private float maxRoll;
-    private float horizontalOrigin;
-    private float verticalOrigin;
+    private static final float DEFAULT_MAX_PITCH_DEGREES = 30;
+    private static final float DEFAULT_MAX_ROLL_DEGREES = 30;
+    private static final float DEFAULT_HORIZONTAL_ORIGIN_DEGREES = 0;
+    private static final float DEFAULT_VERTICAL_ORIGIN_DEGREES = 0;
+    private float maxPitchDeg;
+    private float maxRollDeg;
+    private float horizontalOriginDeg;
+    private float verticalOriginDeg;
 
     /** Determines the basis in which device orientation is measured. */
     public enum OrientationMode {
@@ -51,6 +51,9 @@ public class WindowView extends ImageView implements TiltSensor.TiltListener {
     }
     private static final OrientationMode DEFAULT_ORIENTATION_MODE = OrientationMode.RELATIVE;
     private OrientationMode orientationMode;
+
+    private static final float DEFAULT_MAX_CONSTANT_OFFSET_DP = 150;
+    private float maxConstantOffset;
 
     /** Determines the relationship between change in device tilt and change in image translation. */
     public enum TranslateMode {
@@ -108,19 +111,20 @@ public class WindowView extends ImageView implements TiltSensor.TiltListener {
     }
 
     protected void init(Context context, AttributeSet attrs){
-        maxPitch = DEFAULT_MAX_PITCH;
-        maxRoll = DEFAULT_MAX_ROLL;
-        verticalOrigin = DEFAULT_VERTICAL_ORIGIN;
-        horizontalOrigin = DEFAULT_HORIZONTAL_ORIGIN;
+        maxPitchDeg = DEFAULT_MAX_PITCH_DEGREES;
+        maxRollDeg = DEFAULT_MAX_ROLL_DEGREES;
+        verticalOriginDeg = DEFAULT_VERTICAL_ORIGIN_DEGREES;
+        horizontalOriginDeg = DEFAULT_HORIZONTAL_ORIGIN_DEGREES;
         orientationMode = DEFAULT_ORIENTATION_MODE;
         translateMode = DEFAULT_TRANSLATE_MODE;
+        maxConstantOffset = DEFAULT_MAX_CONSTANT_OFFSET_DP * getResources().getDisplayMetrics().density;
 
         if(null != attrs){
             final TypedArray a = context.obtainStyledAttributes(attrs, R.styleable.WindowView);
-            maxPitch = a.getFloat(R.styleable.WindowView_maxPitch, maxPitch);
-            maxRoll = a.getFloat(R.styleable.WindowView_maxRoll, maxRoll);
-            verticalOrigin = a.getFloat(R.styleable.WindowView_verticalOrigin, verticalOrigin);
-            horizontalOrigin = a.getFloat(R.styleable.WindowView_horizontalOrigin, horizontalOrigin);
+            maxPitchDeg = a.getFloat(R.styleable.WindowView_maxPitch, maxPitchDeg);
+            maxRollDeg = a.getFloat(R.styleable.WindowView_maxRoll, maxRollDeg);
+            verticalOriginDeg = a.getFloat(R.styleable.WindowView_verticalOrigin, verticalOriginDeg);
+            horizontalOriginDeg = a.getFloat(R.styleable.WindowView_horizontalOrigin, horizontalOriginDeg);
 
             int orientationModeIndex = a.getInt(R.styleable.WindowView_orientationMode, -1);
             if(orientationModeIndex >= 0){
@@ -191,18 +195,19 @@ public class WindowView extends ImageView implements TiltSensor.TiltListener {
         float translateY = 0f;
         if(heightMatches){
             // only let user tilt horizontally
-            translateX = (-horizontalOrigin +
-                    clampAbsoluteFloating(horizontalOrigin, latestRoll, maxRoll)) / maxRoll;
+            translateX = (-horizontalOriginDeg +
+                    clampAbsoluteFloating(horizontalOriginDeg, latestRoll, maxRollDeg)) / maxRollDeg;
         } else {
             // only let user tilt vertically
-            translateY = (verticalOrigin -
-                    clampAbsoluteFloating(verticalOrigin, latestPitch, maxPitch)) / maxPitch;
+            translateY = (verticalOriginDeg -
+                    clampAbsoluteFloating(verticalOriginDeg, latestPitch, maxPitchDeg)) / maxPitchDeg;
         }
         canvas.save();
         switch(translateMode){
             case CONSTANT:
-                canvas.translate(clampAbsoluteFloating(0, 300 * translateX, widthDifference / 2),
-                        clampAbsoluteFloating(0, 300 * translateY, heightDifference / 2));
+                canvas.translate(
+                        clampAbsoluteFloating(0, maxConstantOffset * translateX, widthDifference / 2),
+                        clampAbsoluteFloating(0, maxConstantOffset * translateY, heightDifference / 2));
                 break;
             case PROPORTIONAL:
                 canvas.translate(Math.round((widthDifference / 2) * translateX),
@@ -243,11 +248,11 @@ public class WindowView extends ImageView implements TiltSensor.TiltListener {
             debugText(canvas, i++, "pitch " + latestPitch);
             debugText(canvas, i++, "roll  " + latestRoll);
 
-            debugText(canvas, i++, "MAX_PITCH " + maxPitch);
-            debugText(canvas, i++, "MAX_ROLL  " + maxRoll);
+            debugText(canvas, i++, "MAX_PITCH " + maxPitchDeg);
+            debugText(canvas, i++, "MAX_ROLL  " + maxRollDeg);
 
-            debugText(canvas, i++, "HOR ORIGIN " + horizontalOrigin);
-            debugText(canvas, i++, "VER ORIGIN " + verticalOrigin);
+            debugText(canvas, i++, "HOR ORIGIN " + horizontalOriginDeg);
+            debugText(canvas, i++, "VER ORIGIN " + verticalOriginDeg);
 
             switch(sensor.getScreenRotation()){
                 case Surface.ROTATION_0:
@@ -286,20 +291,20 @@ public class WindowView extends ImageView implements TiltSensor.TiltListener {
 
     /** Maximum angle (in degrees) from origin for vertical tilts. */
     public void setMaxPitch(float maxPitch) {
-        this.maxPitch = maxPitch;
+        this.maxPitchDeg = maxPitch;
     }
 
     public float getMaxPitch() {
-        return maxPitch;
+        return maxPitchDeg;
     }
 
     /** Maximum angle (in degrees) from origin for horizontal tilts. */
     public void setMaxRoll(float maxRoll) {
-        this.maxRoll = maxRoll;
+        this.maxRollDeg = maxRoll;
     }
 
     public float getMaxRoll() {
-        return maxRoll;
+        return maxRollDeg;
     }
 
     /**
@@ -307,11 +312,11 @@ public class WindowView extends ImageView implements TiltSensor.TiltListener {
      * is centered horizontally.
      */
     public void setHorizontalOrigin(float horizontalOrigin) {
-        this.horizontalOrigin = horizontalOrigin;
+        this.horizontalOriginDeg = horizontalOrigin;
     }
 
     public float getHorizontalOrigin() {
-        return horizontalOrigin;
+        return horizontalOriginDeg;
     }
 
     /**
@@ -319,11 +324,11 @@ public class WindowView extends ImageView implements TiltSensor.TiltListener {
      * is centered vertically.
      */
     public void setVerticalOrigin(float verticalOrigin) {
-        this.verticalOrigin = verticalOrigin;
+        this.verticalOriginDeg = verticalOrigin;
     }
 
     public float getVerticalOrigin() {
-        return verticalOrigin;
+        return verticalOriginDeg;
     }
 
     @Override
