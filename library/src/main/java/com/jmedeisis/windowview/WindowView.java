@@ -10,6 +10,7 @@ import android.hardware.Sensor;
 import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
+import android.support.annotation.NonNull;
 import android.util.AttributeSet;
 import android.util.Log;
 import android.view.Surface;
@@ -64,19 +65,19 @@ public class WindowView extends ImageView implements SensorEventListener {
     private float verticalOrigin;
 
     /** Interface definition for a callback to be invoked when new orientation values are processed. */
-    public static interface OnNewOrientationListener {
+    public interface OnNewOrientationListener {
         /**
          * Called when new orientation values are present.
          * @see com.jmedeisis.windowview.WindowView#getLatestYaw()
          * @see com.jmedeisis.windowview.WindowView#getLatestPitch()
          * @see com.jmedeisis.windowview.WindowView#getLatestRoll()
          */
-        public void onNewOrientation(WindowView windowView);
+        void onNewOrientation(WindowView windowView);
     }
     private OnNewOrientationListener orientationListener;
 
     /** Determines the basis in which device orientation is measured. */
-    public static enum OrientationMode {
+    public enum OrientationMode {
         /** Measures absolute yaw / pitch / roll (i.e. relative to the world). */
         ABSOLUTE,
         /**
@@ -90,7 +91,7 @@ public class WindowView extends ImageView implements SensorEventListener {
     private OrientationMode orientationMode;
 
     /** Determines the relationship between change in device tilt and change in image translation. */
-    public static enum TranslateMode {
+    public enum TranslateMode {
         /**
          * The image is translated by a constant amount per unit of device tilt.
          * Generally preferable when viewing multiple adjacent WindowViews that have different
@@ -178,6 +179,12 @@ public class WindowView extends ImageView implements SensorEventListener {
 
     /*
      * LIFE-CYCLE
+     * Registering for sensor events should be tied to Activity / Fragment lifecycle events.
+     * However, this would mean that WindowView cannot be independent. We tie into a few
+     * lifecycle-esque View events that allow us to make WindowView completely independent.
+     *
+     * Un-registering from sensor events is done aggressively to minimise battery drain and
+     * performance impact.
      * ---------------------------------------------------------------------------------------------
      */
     @Override
@@ -226,7 +233,7 @@ public class WindowView extends ImageView implements SensorEventListener {
      */
     @SuppressWarnings("UnusedAssignment")
     @Override
-    protected void onDraw(Canvas canvas){
+    protected void onDraw(@NonNull Canvas canvas){
         // -1 -> 1
         float translateX = 0f;
         float translateY = 0f;
@@ -470,6 +477,7 @@ public class WindowView extends ImageView implements SensorEventListener {
      * else result may be undefined.
      * @return true if rotation was retrieved and recalculated, false otherwise.
      */
+    @SuppressWarnings("SuspiciousNameCombination")
     private boolean computeRotationMatrix(){
         if(SensorManager.getRotationMatrix(rotationMatrixTemp, null, latestAccelerations, latestMagFields)){
             switch(screenRotation){
