@@ -37,9 +37,6 @@ Known Problems
 --------------
 - Images with non-standard scaled widths/heights may be translated a few pixels too far at extreme
 orientations.
-- Images with large/extreme aspect ratios may experience slight jitters due to sensor data
-inaccuracies. Tweaking the `NUM_FILTER_SAMPLES` and `LOW_PASS_COEFF` values in `WindowView` may
-reduce jitter at the expense of responsiveness.
 
 License
 -------

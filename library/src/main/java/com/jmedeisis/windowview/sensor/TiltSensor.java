@@ -10,8 +10,6 @@ import android.view.Display;
 import android.view.Surface;
 import android.view.WindowManager;
 
-import com.jmedeisis.windowview.WindowView;
-
 import java.util.ArrayList;
 import java.util.List;
 
@@ -60,21 +58,18 @@ public class TiltSensor implements SensorEventListener {
     private boolean haveQuatOrigin = false;
     private boolean haveRotVecData = false;
 
-    private final WindowView.Filter yawFilter;
-    private final WindowView.Filter pitchFilter;
-    private final WindowView.Filter rollFilter;
+    private Filter yawFilter;
+    private Filter pitchFilter;
+    private Filter rollFilter;
 
-    private static final int NUM_FILTER_SAMPLES_HIGH_ACC = 10;
-    private static final float LOW_PASS_COEFF_HIGH_ACC = 0.7f;
-    private static final int NUM_FILTER_SAMPLES_LOW_ACC = 15;
-    private static final float LOW_PASS_COEFF_LOW_ACC = 0.5f;
+    /** See {@link ExponentialSmoothingFilter#setSmoothingFactor(float)}. */
+    private static final float SMOOTHING_FACTOR_HIGH_ACC = 0.8f;
+    private static final float SMOOTHING_FACTOR_LOW_ACC = 0.5f;
 
     public TiltSensor(Context context, boolean trackRelativeOrientation){
         listeners = new ArrayList<>();
 
-        yawFilter = new WindowView.Filter(NUM_FILTER_SAMPLES_LOW_ACC, LOW_PASS_COEFF_LOW_ACC, 0);
-        pitchFilter = new WindowView.Filter(NUM_FILTER_SAMPLES_LOW_ACC, LOW_PASS_COEFF_LOW_ACC, 0);
-        rollFilter = new WindowView.Filter(NUM_FILTER_SAMPLES_LOW_ACC, LOW_PASS_COEFF_LOW_ACC, 0);
+        initialiseDefaultFilters(SMOOTHING_FACTOR_LOW_ACC);
 
         sensorManager = (SensorManager) context.getSystemService(Context.SENSOR_SERVICE);
 
@@ -84,7 +79,7 @@ public class TiltSensor implements SensorEventListener {
         this.relativeTilt = trackRelativeOrientation;
     }
 
-    public void startTracking(){
+    public void startTracking() {
         sensorManager.registerListener(this, sensorManager.getDefaultSensor(Sensor.TYPE_ROTATION_VECTOR),
                 SensorManager.SENSOR_DELAY_GAME);
         sensorManager.registerListener(this, sensorManager.getDefaultSensor(Sensor.TYPE_MAGNETIC_FIELD),
@@ -97,9 +92,9 @@ public class TiltSensor implements SensorEventListener {
 
     public void stopTracking(){
         sensorManager.unregisterListener(this);
-        yawFilter.reset(0);
-        pitchFilter.reset(0);
-        rollFilter.reset(0);
+        if(null != yawFilter) yawFilter.reset(0);
+        if(null != pitchFilter) pitchFilter.reset(0);
+        if(null != rollFilter) rollFilter.reset(0);
     }
 
     public void addListener(TiltListener listener){
@@ -119,13 +114,13 @@ public class TiltSensor implements SensorEventListener {
         return screenRotation;
     }
 
-    private void setFilterResponse(boolean highQualityData){
-        yawFilter.setSampleCount(highQualityData ? NUM_FILTER_SAMPLES_HIGH_ACC : NUM_FILTER_SAMPLES_LOW_ACC);
-        yawFilter.setFactor(highQualityData ? LOW_PASS_COEFF_HIGH_ACC : LOW_PASS_COEFF_LOW_ACC);
-        pitchFilter.setSampleCount(highQualityData ? NUM_FILTER_SAMPLES_HIGH_ACC : NUM_FILTER_SAMPLES_LOW_ACC);
-        pitchFilter.setFactor(highQualityData ? LOW_PASS_COEFF_HIGH_ACC : LOW_PASS_COEFF_LOW_ACC);
-        rollFilter.setSampleCount(highQualityData ? NUM_FILTER_SAMPLES_HIGH_ACC : NUM_FILTER_SAMPLES_LOW_ACC);
-        rollFilter.setFactor(highQualityData ? LOW_PASS_COEFF_HIGH_ACC : LOW_PASS_COEFF_LOW_ACC);
+    /**
+     * @param factor see {@link ExponentialSmoothingFilter#setSmoothingFactor(float)}
+     */
+    private void initialiseDefaultFilters(float factor){
+        yawFilter = new ExponentialSmoothingFilter(factor, null == yawFilter ? 0 : yawFilter.get());
+        pitchFilter = new ExponentialSmoothingFilter(factor, null == pitchFilter ? 0 : pitchFilter.get());
+        rollFilter = new ExponentialSmoothingFilter(factor, null == rollFilter ? 0 : rollFilter.get());
     }
 
     @Override
@@ -135,7 +130,7 @@ public class TiltSensor implements SensorEventListener {
                 SensorManager.getQuaternionFromVector(latestQuaternion, event.values);
                 if(!haveRotVecData){
                     Log.d("TiltSensor", "Rotation vector sensor present, choosing ROTATION_VECTOR.");
-                    setFilterResponse(true);
+                    initialiseDefaultFilters(SMOOTHING_FACTOR_HIGH_ACC);
                 }
                 haveRotVecData = true;
                 break;
@@ -224,9 +219,9 @@ public class TiltSensor implements SensorEventListener {
      */
     private void computeOrientation(){
         boolean updated = false;
-        float latestYaw = 0;
-        float latestPitch = 0;
-        float latestRoll = 0;
+        float yaw = 0;
+        float pitch = 0;
+        float roll = 0;
 
         if(haveRotVecData){
             remapQuaternionToScreenRotation(latestQuaternion, screenRotation);
@@ -252,13 +247,9 @@ public class TiltSensor implements SensorEventListener {
             float rotZRad = (float) Math.atan2(2 * (q0 * q3 + q1 * q2), 1 - 2 * (q2 * q2 + q3 * q3));
 
             // constructed to match output of SensorManager#getOrientation
-            final float yaw = -rotZRad * DEGREES_PER_RADIAN;
-            final float pitch = -rotXRad * DEGREES_PER_RADIAN;
-            final float roll = rotYRad * DEGREES_PER_RADIAN;
-
-            latestYaw = yawFilter.push(yaw);
-            latestPitch = pitchFilter.push(pitch);
-            latestRoll = rollFilter.push(roll);
+            yaw = -rotZRad * DEGREES_PER_RADIAN;
+            pitch = -rotXRad * DEGREES_PER_RADIAN;
+            roll = rotYRad * DEGREES_PER_RADIAN;
             updated = true;
         } else if(computeRotationMatrix()){
             if(relativeTilt) {
@@ -277,19 +268,21 @@ public class TiltSensor implements SensorEventListener {
              * [1] : pitch, rotation around x axis
              * [2] : roll, rotation around y axis
              */
-            final float yaw = orientation[0] * DEGREES_PER_RADIAN;
-            final float pitch = orientation[1] * DEGREES_PER_RADIAN;
-            final float roll = orientation[2] * DEGREES_PER_RADIAN;
-
-            latestYaw = yawFilter.push(yaw);
-            latestPitch = pitchFilter.push(pitch);
-            latestRoll = rollFilter.push(roll);
+            yaw = orientation[0] * DEGREES_PER_RADIAN;
+            pitch = orientation[1] * DEGREES_PER_RADIAN;
+            roll = orientation[2] * DEGREES_PER_RADIAN;
             updated = true;
         }
 
         if(!updated) return;
+
+
+        if(null != yawFilter) yaw = yawFilter.push(yaw);
+        if(null != pitchFilter) pitch = pitchFilter.push(pitch);
+        if(null != rollFilter) roll = rollFilter.push(roll);
+
         for(int i = 0; i < listeners.size(); i++){
-            listeners.get(i).onTiltUpdate(latestYaw, latestPitch, latestRoll);
+            listeners.get(i).onTiltUpdate(yaw, pitch, roll);
         }
     }
 
@@ -301,9 +294,9 @@ public class TiltSensor implements SensorEventListener {
         haveRotOrigin = false;
         haveQuatOrigin = false;
         if(immediate){
-            yawFilter.reset(0);
-            pitchFilter.reset(0);
-            rollFilter.reset(0);
+            if(null != yawFilter) yawFilter.reset(0);
+            if(null != pitchFilter) pitchFilter.reset(0);
+            if(null != rollFilter) rollFilter.reset(0);
         }
     }
 
