@@ -5,6 +5,7 @@ import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.Typeface;
+import android.hardware.Sensor;
 import android.support.annotation.NonNull;
 import android.util.AttributeSet;
 import android.util.Log;
@@ -122,6 +123,20 @@ public class DebugWindowView extends WindowView {
         }
 
         if(debugTilt){
+            switch (sensor.getChosenSensorType()){
+                case 0:
+                    debugText(canvas, i++, "NO AVAILABLE SENSOR");
+                    break;
+                case Sensor.TYPE_ROTATION_VECTOR:
+                    debugText(canvas, i++, "ROTATION_VECTOR");
+                    break;
+                case Sensor.TYPE_GRAVITY:
+                    debugText(canvas, i++, "MAG + GRAVITY");
+                    break;
+                case Sensor.TYPE_ACCELEROMETER:
+                    debugText(canvas, i++, "MAG + ACCELEROMETER");
+                    break;
+            }
             debugText(canvas, i++, getOrientationMode() + " orientationMode");
 
             /*if(haveOrigin){

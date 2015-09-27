@@ -5,7 +5,6 @@ import android.hardware.Sensor;
 import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
-import android.util.Log;
 import android.view.Display;
 import android.view.Surface;
 import android.view.WindowManager;
@@ -129,7 +128,6 @@ public class TiltSensor implements SensorEventListener {
             case Sensor.TYPE_ROTATION_VECTOR:
                 SensorManager.getQuaternionFromVector(latestQuaternion, event.values);
                 if(!haveRotVecData){
-                    Log.d("TiltSensor", "Rotation vector sensor present, choosing ROTATION_VECTOR.");
                     initialiseDefaultFilters(SMOOTHING_FACTOR_HIGH_ACC);
                 }
                 haveRotVecData = true;
@@ -142,7 +140,6 @@ public class TiltSensor implements SensorEventListener {
                     break;
                 }
                 System.arraycopy(event.values, 0, latestAccelerations, 0, 3);
-                if(!haveGravData) Log.d("TiltSensor", "Gravity sensor present, choosing GRAVITY.");
                 haveGravData = true;
                 break;
             case Sensor.TYPE_ACCELEROMETER:
@@ -154,7 +151,6 @@ public class TiltSensor implements SensorEventListener {
                     break;
                 }
                 System.arraycopy(event.values, 0, latestAccelerations, 0, 3);
-                if(!haveAccelData) Log.d("TiltSensor", "Accelerometer present, choosing ACCELEROMETER.");
                 haveAccelData = true;
                 break;
             case Sensor.TYPE_MAGNETIC_FIELD:
@@ -172,6 +168,20 @@ public class TiltSensor implements SensorEventListener {
         if(haveDataNecessaryToComputeOrientation()){
             computeOrientation();
         }
+    }
+
+    /**
+     * After {@link #startTracking()} has been called and sensor data has been received,
+     * this method returns the sensor type chosen for orientation calculations.
+     * @return one of {@link Sensor#TYPE_ROTATION_VECTOR}, {@link Sensor#TYPE_GRAVITY},
+     *         {@link Sensor#TYPE_ACCELEROMETER} or 0 if none of the previous are available or
+     *         {@link #startTracking()} has not yet been called.
+     */
+    public int getChosenSensorType(){
+        if(haveRotVecData) return Sensor.TYPE_ROTATION_VECTOR;
+        if(haveGravData) return Sensor.TYPE_GRAVITY;
+        if(haveAccelData) return Sensor.TYPE_ACCELEROMETER;
+        return 0;
     }
 
     /** @return true if both {@link #latestAccelerations} and {@link #latestMagFields} have valid values. */
