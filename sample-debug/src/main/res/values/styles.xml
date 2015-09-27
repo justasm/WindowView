@@ -16,12 +16,12 @@
     <style name="WindowViewTwo" parent="WindowViewBase">
         <item name="android:src">@drawable/singapore_tall</item>
 
-        <item name="sensorSamplingPeriod">fast</item>
-        <item name="maxPitch">15</item>
-        <item name="maxRoll">15</item>
-        <item name="orientationMode">Relative</item>
-        <item name="translateMode">Constant</item>
-        <item name="maxConstantOffset">50dp</item>
+        <item name="sensor_sampling_period">fast</item>
+        <item name="max_pitch">15</item>
+        <item name="max_roll">15</item>
+        <item name="orientation_mode">Relative</item>
+        <item name="translate_mode">Constant</item>
+        <item name="max_constant_translation">50dp</item>
     </style>
 
 </resources>

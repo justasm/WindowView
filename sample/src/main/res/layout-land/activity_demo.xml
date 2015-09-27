@@ -13,6 +13,7 @@
         android:layout_height="match_parent"
         android:layout_weight="1"
         android:layout_marginRight="@dimen/default_margin"
+        android:layout_marginEnd="@dimen/default_margin"
         android:src="@drawable/london_wide"
         android:contentDescription="@string/content_description" />
 
@@ -23,7 +24,6 @@
         android:layout_weight="1"
         android:src="@drawable/singapore_tall"
         android:contentDescription="@string/content_description"
-        app:orientationMode="Relative"
-        app:translateMode="Constant" />
+        app:translate_mode="Constant" />
 
 </LinearLayout>

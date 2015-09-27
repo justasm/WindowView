@@ -2,7 +2,7 @@
 <resources>
     <declare-styleable name="WindowView">
         <!-- May be any number (defined in microseconds), or one of the pre-defined enums. -->
-        <attr name="sensorSamplingPeriod" format="integer">
+        <attr name="sensor_sampling_period" format="integer">
             <!-- Maps to SensorManager#SENSOR_DELAY_FASTEST -->
             <enum name="fast" value="0" />
             <!-- Maps to SensorManager#SENSOR_DELAY_GAME -->
@@ -12,21 +12,21 @@
         </attr>
 
         <!-- All in degrees. -->
-        <attr name="maxPitch" format="float" />
-        <attr name="maxRoll" format="float" />
-        <attr name="verticalOrigin" format="float" />
-        <attr name="horizontalOrigin" format="float" />
+        <attr name="max_pitch" format="float" />
+        <attr name="max_roll" format="float" />
+        <attr name="vertical_origin" format="float" />
+        <attr name="horizontal_origin" format="float" />
 
-        <attr name="orientationMode" format="enum">
+        <attr name="orientation_mode" format="enum">
             <enum name="Absolute" value="0" />
             <enum name="Relative" value="1" />
         </attr>
 
-        <attr name="translateMode" format="enum">
+        <attr name="translate_mode" format="enum">
             <enum name="Constant" value="0" />
             <enum name="Proportional" value="1" />
         </attr>
         
-        <attr name="maxConstantOffset" format="dimension" />
+        <attr name="max_constant_translation" format="dimension" />
     </declare-styleable>
 </resources>

@@ -51,8 +51,8 @@ public class WindowView extends ImageView implements TiltSensor.TiltListener {
     private static final OrientationMode DEFAULT_ORIENTATION_MODE = OrientationMode.RELATIVE;
     private OrientationMode orientationMode;
 
-    private static final float DEFAULT_MAX_CONSTANT_OFFSET_DP = 150;
-    private float maxConstantOffset;
+    private static final float DEFAULT_MAX_CONSTANT_TRANSLATION_DP = 150;
+    private float maxConstantTranslation;
 
     /** Determines the relationship between change in device tilt and change in image translation. */
     public enum TranslateMode {
@@ -110,26 +110,31 @@ public class WindowView extends ImageView implements TiltSensor.TiltListener {
         horizontalOriginDeg = DEFAULT_HORIZONTAL_ORIGIN_DEGREES;
         orientationMode = DEFAULT_ORIENTATION_MODE;
         translateMode = DEFAULT_TRANSLATE_MODE;
-        maxConstantOffset = DEFAULT_MAX_CONSTANT_OFFSET_DP * getResources().getDisplayMetrics().density;
+        maxConstantTranslation = DEFAULT_MAX_CONSTANT_TRANSLATION_DP *
+                getResources().getDisplayMetrics().density;
 
         if(null != attrs){
             final TypedArray a = context.obtainStyledAttributes(attrs, R.styleable.WindowView);
-            sensorSamplingPeriod = a.getInt(R.styleable.WindowView_sensorSamplingPeriod, sensorSamplingPeriod);
-            maxPitchDeg = a.getFloat(R.styleable.WindowView_maxPitch, maxPitchDeg);
-            maxRollDeg = a.getFloat(R.styleable.WindowView_maxRoll, maxRollDeg);
-            verticalOriginDeg = a.getFloat(R.styleable.WindowView_verticalOrigin, verticalOriginDeg);
-            horizontalOriginDeg = a.getFloat(R.styleable.WindowView_horizontalOrigin, horizontalOriginDeg);
+            sensorSamplingPeriod = a.getInt(R.styleable.WindowView_sensor_sampling_period,
+                    sensorSamplingPeriod);
+            maxPitchDeg = a.getFloat(R.styleable.WindowView_max_pitch, maxPitchDeg);
+            maxRollDeg = a.getFloat(R.styleable.WindowView_max_roll, maxRollDeg);
+            verticalOriginDeg = a.getFloat(R.styleable.WindowView_vertical_origin,
+                    verticalOriginDeg);
+            horizontalOriginDeg = a.getFloat(R.styleable.WindowView_horizontal_origin,
+                    horizontalOriginDeg);
 
-            int orientationModeIndex = a.getInt(R.styleable.WindowView_orientationMode, -1);
+            int orientationModeIndex = a.getInt(R.styleable.WindowView_orientation_mode, -1);
             if(orientationModeIndex >= 0){
                 orientationMode = OrientationMode.values()[orientationModeIndex];
             }
-            int translateModeIndex = a.getInt(R.styleable.WindowView_translateMode, -1);
+            int translateModeIndex = a.getInt(R.styleable.WindowView_translate_mode, -1);
             if(translateModeIndex >= 0){
                 translateMode = TranslateMode.values()[translateModeIndex];
             }
 
-            maxConstantOffset = a.getDimension(R.styleable.WindowView_maxConstantOffset, maxConstantOffset);
+            maxConstantTranslation = a.getDimension(R.styleable.WindowView_max_constant_translation,
+                    maxConstantTranslation);
             a.recycle();
         }
 
@@ -180,27 +185,27 @@ public class WindowView extends ImageView implements TiltSensor.TiltListener {
     @Override
     protected void onDraw(@NonNull Canvas canvas){
         // -1 -> 1
-        float translateX = 0f;
-        float translateY = 0f;
+        float xOffset = 0f;
+        float yOffset = 0f;
         if(heightMatches){
             // only let user tilt horizontally
-            translateX = (-horizontalOriginDeg +
+            xOffset = (-horizontalOriginDeg +
                     clampAbsoluteFloating(horizontalOriginDeg, latestRoll, maxRollDeg)) / maxRollDeg;
         } else {
             // only let user tilt vertically
-            translateY = (verticalOriginDeg -
+            yOffset = (verticalOriginDeg -
                     clampAbsoluteFloating(verticalOriginDeg, latestPitch, maxPitchDeg)) / maxPitchDeg;
         }
         canvas.save();
         switch(translateMode){
             case CONSTANT:
                 canvas.translate(
-                        clampAbsoluteFloating(0, maxConstantOffset * translateX, widthDifference / 2),
-                        clampAbsoluteFloating(0, maxConstantOffset * translateY, heightDifference / 2));
+                        clampAbsoluteFloating(0, maxConstantTranslation * xOffset, widthDifference / 2),
+                        clampAbsoluteFloating(0, maxConstantTranslation * yOffset, heightDifference / 2));
                 break;
             case PROPORTIONAL:
-                canvas.translate(Math.round((widthDifference / 2) * translateX),
-                        Math.round((heightDifference / 2) * translateY));
+                canvas.translate(Math.round((widthDifference / 2) * xOffset),
+                        Math.round((heightDifference / 2) * yOffset));
                 break;
         }
         super.onDraw(canvas);
@@ -221,13 +226,13 @@ public class WindowView extends ImageView implements TiltSensor.TiltListener {
         return translateMode;
     }
 
-    /** Maximum image translation when using {@link TranslateMode#CONSTANT}. */
-    public void setMaxConstantOffset(float maxConstantOffset){
-        this.maxConstantOffset = maxConstantOffset;
+    /** Maximum image translation from center when using {@link TranslateMode#CONSTANT}. */
+    public void setMaxConstantTranslation(float maxConstantTranslation){
+        this.maxConstantTranslation = maxConstantTranslation;
     }
 
-    public float getMaxConstantOffset(){
-        return maxConstantOffset;
+    public float getMaxConstantTranslation(){
+        return maxConstantTranslation;
     }
 
     /** Maximum angle (in degrees) from origin for vertical tilts. */
