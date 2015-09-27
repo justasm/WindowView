@@ -5,7 +5,7 @@ android {
     buildToolsVersion '23.0.1'
 
     defaultConfig {
-        applicationId "com.jmedeisis.example.windowview"
+        applicationId "com.example.windowview"
         minSdkVersion 9
         targetSdkVersion 23
         versionCode 1
