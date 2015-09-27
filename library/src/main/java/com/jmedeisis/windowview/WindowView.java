@@ -137,8 +137,10 @@ public class WindowView extends ImageView implements TiltSensor.TiltListener {
             a.recycle();
         }
 
-        sensor = new TiltSensor(context, orientationMode == OrientationMode.RELATIVE);
-        sensor.addListener(this);
+        if(!isInEditMode()) {
+            sensor = new TiltSensor(context, orientationMode == OrientationMode.RELATIVE);
+            sensor.addListener(this);
+        }
 
         debugTextPaint = new Paint();
         debugTextPaint.setColor(Color.MAGENTA);
@@ -173,7 +175,7 @@ public class WindowView extends ImageView implements TiltSensor.TiltListener {
     protected void onAttachedToWindow(){
         super.onAttachedToWindow();
         if(DEBUG_LIFECYCLE) Log.d(LOG_TAG, "onAttachedToWindow()");
-        sensor.startTracking();
+        if(!isInEditMode()) sensor.startTracking();
     }
 
     @Override
