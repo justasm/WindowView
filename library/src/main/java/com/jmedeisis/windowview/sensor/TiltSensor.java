@@ -34,6 +34,15 @@ public class TiltSensor implements SensorEventListener {
 
     /** Interface for callback to be invoked when new orientation values are available. */
     public interface TiltListener {
+        /**
+         * Euler angles defined as per {@link SensorManager#getOrientation(float[], float[])}.
+         * <p>
+         * All three are in <b>radians</b> and <b>positive</b> in the <b>counter-clockwise</b>
+         * direction.
+         * @param yaw rotation around -Z axis. -PI to PI.
+         * @param pitch rotation around -X axis. -PI/2 to PI/2.
+         * @param roll rotation around Y axis. -PI to PI.
+         */
         void onTiltUpdate(float yaw, float pitch, float roll);
     }
     private List<TiltListener> listeners;
@@ -78,17 +87,28 @@ public class TiltSensor implements SensorEventListener {
         this.relativeTilt = trackRelativeOrientation;
     }
 
-    public void startTracking() {
-        sensorManager.registerListener(this, sensorManager.getDefaultSensor(Sensor.TYPE_ROTATION_VECTOR),
-                SensorManager.SENSOR_DELAY_GAME);
-        sensorManager.registerListener(this, sensorManager.getDefaultSensor(Sensor.TYPE_MAGNETIC_FIELD),
-                SensorManager.SENSOR_DELAY_GAME);
-        sensorManager.registerListener(this, sensorManager.getDefaultSensor(Sensor.TYPE_GRAVITY),
-                SensorManager.SENSOR_DELAY_GAME);
-        sensorManager.registerListener(this, sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER),
-                SensorManager.SENSOR_DELAY_GAME);
+    /**
+     * Registers for motion sensor events.
+     * Do this to begin receiving {@link TiltListener#onTiltUpdate(float, float, float)} callbacks.
+     * <p>
+     * <b>You must call {@link #stopTracking()} to unregister when tilt updates are no longer
+     * needed.</b>
+     * @param samplingPeriodUs see {@link SensorManager#registerListener(SensorEventListener, Sensor, int)}
+     */
+    public void startTracking(int samplingPeriodUs) {
+        sensorManager.registerListener(this,
+                sensorManager.getDefaultSensor(Sensor.TYPE_ROTATION_VECTOR), samplingPeriodUs);
+        sensorManager.registerListener(this,
+                sensorManager.getDefaultSensor(Sensor.TYPE_MAGNETIC_FIELD), samplingPeriodUs);
+        sensorManager.registerListener(this,
+                sensorManager.getDefaultSensor(Sensor.TYPE_GRAVITY), samplingPeriodUs);
+        sensorManager.registerListener(this,
+                sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER),samplingPeriodUs);
     }
 
+    /**
+     * Unregisters from motion sensor events.
+     */
     public void stopTracking(){
         sensorManager.unregisterListener(this);
         if(null != yawFilter) yawFilter.reset(0);
@@ -171,11 +191,11 @@ public class TiltSensor implements SensorEventListener {
     }
 
     /**
-     * After {@link #startTracking()} has been called and sensor data has been received,
+     * After {@link #startTracking(int)} has been called and sensor data has been received,
      * this method returns the sensor type chosen for orientation calculations.
      * @return one of {@link Sensor#TYPE_ROTATION_VECTOR}, {@link Sensor#TYPE_GRAVITY},
      *         {@link Sensor#TYPE_ACCELEROMETER} or 0 if none of the previous are available or
-     *         {@link #startTracking()} has not yet been called.
+     *         {@link #startTracking(int)} has not yet been called.
      */
     public int getChosenSensorType(){
         if(haveRotVecData) return Sensor.TYPE_ROTATION_VECTOR;
@@ -274,8 +294,8 @@ public class TiltSensor implements SensorEventListener {
                 SensorManager.getOrientation(rotationMatrix, orientation);
             }
             /*
-             * [0] : yaw, rotation around z axis
-             * [1] : pitch, rotation around x axis
+             * [0] : yaw, rotation around -z axis
+             * [1] : pitch, rotation around -x axis
              * [2] : roll, rotation around y axis
              */
             yaw = orientation[0] * DEGREES_PER_RADIAN;

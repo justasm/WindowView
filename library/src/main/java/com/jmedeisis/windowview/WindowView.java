@@ -4,6 +4,7 @@ import android.annotation.TargetApi;
 import android.content.Context;
 import android.content.res.TypedArray;
 import android.graphics.Canvas;
+import android.hardware.SensorManager;
 import android.os.Build;
 import android.support.annotation.NonNull;
 import android.util.AttributeSet;
@@ -30,6 +31,9 @@ public class WindowView extends ImageView implements TiltSensor.TiltListener {
     private float maxRollDeg;
     private float horizontalOriginDeg;
     private float verticalOriginDeg;
+
+    private static final int DEFAULT_SENSOR_SAMPLING_PERIOD_US = SensorManager.SENSOR_DELAY_GAME;
+    private int sensorSamplingPeriodUs;
 
     /** Determines the basis in which device orientation is measured. */
     public enum OrientationMode {
@@ -97,6 +101,7 @@ public class WindowView extends ImageView implements TiltSensor.TiltListener {
     }
 
     protected void init(Context context, AttributeSet attrs){
+        sensorSamplingPeriodUs = DEFAULT_SENSOR_SAMPLING_PERIOD_US;
         maxPitchDeg = DEFAULT_MAX_PITCH_DEGREES;
         maxRollDeg = DEFAULT_MAX_ROLL_DEGREES;
         verticalOriginDeg = DEFAULT_VERTICAL_ORIGIN_DEGREES;
@@ -145,7 +150,7 @@ public class WindowView extends ImageView implements TiltSensor.TiltListener {
     public void onWindowFocusChanged(boolean hasWindowFocus){
         super.onWindowFocusChanged(hasWindowFocus);
         if(hasWindowFocus){
-            sensor.startTracking();
+            sensor.startTracking(sensorSamplingPeriodUs);
         } else {
             sensor.stopTracking();
         }
@@ -154,7 +159,7 @@ public class WindowView extends ImageView implements TiltSensor.TiltListener {
     @Override
     protected void onAttachedToWindow(){
         super.onAttachedToWindow();
-        if(!isInEditMode()) sensor.startTracking();
+        if(!isInEditMode()) sensor.startTracking(sensorSamplingPeriodUs);
     }
 
     @Override
