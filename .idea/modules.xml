@@ -5,6 +5,7 @@
       <module fileurl="file://$PROJECT_DIR$/WindowView.iml" filepath="$PROJECT_DIR$/WindowView.iml" />
       <module fileurl="file://$PROJECT_DIR$/library/library.iml" filepath="$PROJECT_DIR$/library/library.iml" />
       <module fileurl="file://$PROJECT_DIR$/sample/sample.iml" filepath="$PROJECT_DIR$/sample/sample.iml" />
+      <module fileurl="file://$PROJECT_DIR$/sample-debug/sample-debug.iml" filepath="$PROJECT_DIR$/sample-debug/sample-debug.iml" />
     </modules>
   </component>
 </project>

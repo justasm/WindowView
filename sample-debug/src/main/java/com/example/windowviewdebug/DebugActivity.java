@@ -1,4 +1,4 @@
-package com.jmedeisis.example.windowview;
+package com.example.windowviewdebug;
 
 import android.annotation.TargetApi;
 import android.content.pm.ActivityInfo;
@@ -11,25 +11,24 @@ import android.view.MenuItem;
 import android.view.View;
 import android.widget.Toast;
 
-import com.jmedeisis.windowview.WindowView;
 import com.jmedeisis.windowview.sensor.TiltSensor;
 
-public class DemoActivity extends AppCompatActivity {
+public class DebugActivity extends AppCompatActivity {
 
     private static final String ORIENTATION = "orientation";
     private static final String DEBUG_TILT = "debugTilt";
     private static final String DEBUG_IMAGE = "debugImage";
     boolean debugTilt, debugImage;
-    WindowView windowView1;
-    WindowView windowView2;
+    DebugWindowView windowView1;
+    DebugWindowView windowView2;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_demo);
 
-        windowView1 = (WindowView) findViewById(R.id.windowView1);
-        windowView2 = (WindowView) findViewById(R.id.windowView2);
+        windowView1 = (DebugWindowView) findViewById(R.id.windowView1);
+        windowView2 = (DebugWindowView) findViewById(R.id.windowView2);
         /*
          * For sake of demo interface simplicity & compass visualisation, tapping on either
          * WindowView resets both of their orientation origins.
@@ -51,6 +50,9 @@ public class DemoActivity extends AppCompatActivity {
             setRequestedOrientation(savedInstanceState.getInt(ORIENTATION));
             debugTilt = savedInstanceState.getBoolean(DEBUG_TILT);
             debugImage = savedInstanceState.getBoolean(DEBUG_IMAGE);
+
+            windowView1.setDebugEnabled(debugTilt, debugImage);
+            windowView2.setDebugEnabled(debugTilt, debugImage);
         } else {
             setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT); // default
             debugTilt = false;
@@ -69,7 +71,7 @@ public class DemoActivity extends AppCompatActivity {
     @TargetApi(Build.VERSION_CODES.HONEYCOMB)
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
-        getMenuInflater().inflate(R.menu.demo, menu);
+        getMenuInflater().inflate(R.menu.menu_debug, menu);
 
         menu.findItem(R.id.action_lock_portrait)
                 .setChecked(getRequestedOrientation() == ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
@@ -101,7 +103,7 @@ public class DemoActivity extends AppCompatActivity {
             actionView.setOnLongClickListener(new View.OnLongClickListener() {
                 @Override
                 public boolean onLongClick(View v) {
-                    Toast t = Toast.makeText(DemoActivity.this,
+                    Toast t = Toast.makeText(DebugActivity.this,
                             R.string.action_reset_orientation, Toast.LENGTH_SHORT);
                     int[] pos = new int[2];
                     actionView.getLocationInWindow(pos);
@@ -122,7 +124,7 @@ public class DemoActivity extends AppCompatActivity {
     private void resetWindowViewOrientationOrigins(){
         windowView1.resetOrientationOrigin(false);
         windowView2.resetOrientationOrigin(false);
-        Toast.makeText(DemoActivity.this, R.string.hint_orientation_reset, Toast.LENGTH_SHORT).show();
+        Toast.makeText(DebugActivity.this, R.string.hint_orientation_reset, Toast.LENGTH_SHORT).show();
     }
 
     @Override
