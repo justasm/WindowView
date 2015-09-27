@@ -4,6 +4,8 @@ import android.annotation.TargetApi;
 import android.content.Context;
 import android.content.res.TypedArray;
 import android.graphics.Canvas;
+import android.hardware.Sensor;
+import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
 import android.os.Build;
 import android.support.annotation.NonNull;
@@ -33,7 +35,7 @@ public class WindowView extends ImageView implements TiltSensor.TiltListener {
     private float verticalOriginDeg;
 
     private static final int DEFAULT_SENSOR_SAMPLING_PERIOD_US = SensorManager.SENSOR_DELAY_GAME;
-    private int sensorSamplingPeriodUs;
+    private int sensorSamplingPeriod;
 
     /** Determines the basis in which device orientation is measured. */
     public enum OrientationMode {
@@ -101,7 +103,7 @@ public class WindowView extends ImageView implements TiltSensor.TiltListener {
     }
 
     protected void init(Context context, AttributeSet attrs){
-        sensorSamplingPeriodUs = DEFAULT_SENSOR_SAMPLING_PERIOD_US;
+        sensorSamplingPeriod = DEFAULT_SENSOR_SAMPLING_PERIOD_US;
         maxPitchDeg = DEFAULT_MAX_PITCH_DEGREES;
         maxRollDeg = DEFAULT_MAX_ROLL_DEGREES;
         verticalOriginDeg = DEFAULT_VERTICAL_ORIGIN_DEGREES;
@@ -112,6 +114,7 @@ public class WindowView extends ImageView implements TiltSensor.TiltListener {
 
         if(null != attrs){
             final TypedArray a = context.obtainStyledAttributes(attrs, R.styleable.WindowView);
+            sensorSamplingPeriod = a.getInt(R.styleable.WindowView_sensorSamplingPeriod, sensorSamplingPeriod);
             maxPitchDeg = a.getFloat(R.styleable.WindowView_maxPitch, maxPitchDeg);
             maxRollDeg = a.getFloat(R.styleable.WindowView_maxRoll, maxRollDeg);
             verticalOriginDeg = a.getFloat(R.styleable.WindowView_verticalOrigin, verticalOriginDeg);
@@ -125,6 +128,8 @@ public class WindowView extends ImageView implements TiltSensor.TiltListener {
             if(translateModeIndex >= 0){
                 translateMode = TranslateMode.values()[translateModeIndex];
             }
+
+            maxConstantOffset = a.getDimension(R.styleable.WindowView_maxConstantOffset, maxConstantOffset);
             a.recycle();
         }
 
@@ -150,7 +155,7 @@ public class WindowView extends ImageView implements TiltSensor.TiltListener {
     public void onWindowFocusChanged(boolean hasWindowFocus){
         super.onWindowFocusChanged(hasWindowFocus);
         if(hasWindowFocus){
-            sensor.startTracking(sensorSamplingPeriodUs);
+            sensor.startTracking(sensorSamplingPeriod);
         } else {
             sensor.stopTracking();
         }
@@ -159,7 +164,7 @@ public class WindowView extends ImageView implements TiltSensor.TiltListener {
     @Override
     protected void onAttachedToWindow(){
         super.onAttachedToWindow();
-        if(!isInEditMode()) sensor.startTracking(sensorSamplingPeriodUs);
+        if(!isInEditMode()) sensor.startTracking(sensorSamplingPeriod);
     }
 
     @Override
@@ -207,13 +212,22 @@ public class WindowView extends ImageView implements TiltSensor.TiltListener {
                 Math.max(value, origin - maxAbsolute) : Math.min(value, origin + maxAbsolute);
     }
 
-    /** See {@link com.jmedeisis.windowview.WindowView.TranslateMode}. */
+    /** See {@link TranslateMode}. */
     public void setTranslateMode(TranslateMode translateMode){
         this.translateMode = translateMode;
     }
 
     public TranslateMode getTranslateMode(){
         return translateMode;
+    }
+
+    /** Maximum image translation when using {@link TranslateMode#CONSTANT}. */
+    public void setMaxConstantOffset(float maxConstantOffset){
+        this.maxConstantOffset = maxConstantOffset;
+    }
+
+    public float getMaxConstantOffset(){
+        return maxConstantOffset;
     }
 
     /** Maximum angle (in degrees) from origin for vertical tilts. */
@@ -335,7 +349,7 @@ public class WindowView extends ImageView implements TiltSensor.TiltListener {
 
     /**
      * Manually resets the orientation origin. Has no effect unless {@link #getOrientationMode()}
-     * is {@link com.jmedeisis.windowview.WindowView.OrientationMode#RELATIVE}.
+     * is {@link OrientationMode#RELATIVE}.
      *
      * @param immediate if false, the sensor values smoothly interpolate to the new origin.
      */
@@ -345,7 +359,7 @@ public class WindowView extends ImageView implements TiltSensor.TiltListener {
 
     /**
      * Determines the mapping of orientation to image offset.
-     * See {@link com.jmedeisis.windowview.WindowView.OrientationMode}.
+     * See {@link OrientationMode}.
      */
     public void setOrientationMode(OrientationMode orientationMode){
         this.orientationMode = orientationMode;
@@ -355,5 +369,21 @@ public class WindowView extends ImageView implements TiltSensor.TiltListener {
 
     public OrientationMode getOrientationMode(){
         return orientationMode;
+    }
+
+    /**
+     * @param samplingPeriodUs see {@link SensorManager#registerListener(SensorEventListener, Sensor, int)}
+     */
+    public void setSensorSamplingPeriod(int samplingPeriodUs){
+        this.sensorSamplingPeriod = samplingPeriodUs;
+        if(sensor.isTracking()){
+            sensor.stopTracking();
+            sensor.startTracking(this.sensorSamplingPeriod);
+        }
+    }
+
+    /** @return sensor sampling period (in microseconds). */
+    public int getSensorSamplingPeriod(){
+        return sensorSamplingPeriod;
     }
 }

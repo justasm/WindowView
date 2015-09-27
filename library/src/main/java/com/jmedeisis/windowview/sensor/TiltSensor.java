@@ -27,6 +27,8 @@ public class TiltSensor implements SensorEventListener {
 
     private final SensorManager sensorManager;
 
+    private boolean tracking;
+
     /** @see {@link Display#getRotation()}. */
     private final int screenRotation;
 
@@ -80,6 +82,7 @@ public class TiltSensor implements SensorEventListener {
         initialiseDefaultFilters(SMOOTHING_FACTOR_LOW_ACC);
 
         sensorManager = (SensorManager) context.getSystemService(Context.SENSOR_SERVICE);
+        tracking = false;
 
         screenRotation = ((WindowManager) context.getSystemService(Context.WINDOW_SERVICE))
                 .getDefaultDisplay().getRotation();
@@ -104,6 +107,11 @@ public class TiltSensor implements SensorEventListener {
                 sensorManager.getDefaultSensor(Sensor.TYPE_GRAVITY), samplingPeriodUs);
         sensorManager.registerListener(this,
                 sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER),samplingPeriodUs);
+        tracking = true;
+    }
+
+    public boolean isTracking(){
+        return tracking;
     }
 
     /**
@@ -114,6 +122,7 @@ public class TiltSensor implements SensorEventListener {
         if(null != yawFilter) yawFilter.reset(0);
         if(null != pitchFilter) pitchFilter.reset(0);
         if(null != rollFilter) rollFilter.reset(0);
+        tracking = false;
     }
 
     public void addListener(TiltListener listener){

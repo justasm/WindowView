@@ -1,6 +1,17 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <declare-styleable name="WindowView">
+        <!-- May be any number (defined in microseconds), or one of the pre-defined enums. -->
+        <attr name="sensorSamplingPeriod" format="integer">
+            <!-- Maps to SensorManager#SENSOR_DELAY_FASTEST -->
+            <enum name="fast" value="0" />
+            <!-- Maps to SensorManager#SENSOR_DELAY_GAME -->
+            <enum name="normal" value="1" />
+            <!-- Maps to SensorManager#SENSOR_DELAY_UI -->
+            <enum name="slow" value="2" />
+        </attr>
+
+        <!-- All in degrees. -->
         <attr name="maxPitch" format="float" />
         <attr name="maxRoll" format="float" />
         <attr name="verticalOrigin" format="float" />
@@ -15,5 +26,7 @@
             <enum name="Constant" value="0" />
             <enum name="Proportional" value="1" />
         </attr>
+        
+        <attr name="maxConstantOffset" format="dimension" />
     </declare-styleable>
 </resources>

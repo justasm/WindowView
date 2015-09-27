@@ -5,4 +5,23 @@
         <!-- Customize your theme here. -->
     </style>
 
+    <style name="WindowViewBase">
+        <item name="android:contentDescription">@string/content_description</item>
+    </style>
+
+    <style name="WindowViewOne" parent="WindowViewBase">
+        <item name="android:src">@drawable/london_wide</item>
+    </style>
+
+    <style name="WindowViewTwo" parent="WindowViewBase">
+        <item name="android:src">@drawable/singapore_tall</item>
+
+        <item name="sensorSamplingPeriod">fast</item>
+        <item name="maxPitch">15</item>
+        <item name="maxRoll">15</item>
+        <item name="orientationMode">Relative</item>
+        <item name="translateMode">Constant</item>
+        <item name="maxConstantOffset">50dp</item>
+    </style>
+
 </resources>

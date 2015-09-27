@@ -1,6 +1,5 @@
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:layout_margin="@dimen/default_margin"
@@ -8,22 +7,19 @@
     android:orientation="horizontal">
 
     <com.example.windowviewdebug.DebugWindowView
+        style="@style/WindowViewOne"
         android:id="@+id/windowView1"
         android:layout_width="0dp"
         android:layout_height="match_parent"
         android:layout_weight="1"
         android:layout_marginRight="@dimen/default_margin"
-        android:src="@drawable/london_wide"
-        android:contentDescription="@string/content_description" />
+        android:layout_marginEnd="@dimen/default_margin" />
 
     <com.example.windowviewdebug.DebugWindowView
+        style="@style/WindowViewTwo"
         android:id="@+id/windowView2"
         android:layout_width="0dp"
         android:layout_height="match_parent"
-        android:layout_weight="1"
-        android:src="@drawable/singapore_tall"
-        android:contentDescription="@string/content_description"
-        app:orientationMode="Relative"
-        app:translateMode="Constant" />
+        android:layout_weight="1" />
 
 </LinearLayout>

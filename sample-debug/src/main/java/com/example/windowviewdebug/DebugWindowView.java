@@ -6,6 +6,7 @@ import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.Typeface;
 import android.hardware.Sensor;
+import android.hardware.SensorManager;
 import android.support.annotation.NonNull;
 import android.util.AttributeSet;
 import android.util.Log;
@@ -135,6 +136,23 @@ public class DebugWindowView extends WindowView {
                     break;
                 case Sensor.TYPE_ACCELEROMETER:
                     debugText(canvas, i++, "MAG + ACCELEROMETER");
+                    break;
+            }
+            switch (getSensorSamplingPeriod()){
+                case SensorManager.SENSOR_DELAY_FASTEST:
+                    debugText(canvas, i++, "SENSOR_DELAY_FASTEST");
+                    break;
+                case SensorManager.SENSOR_DELAY_GAME:
+                    debugText(canvas, i++, "SENSOR_DELAY_GAME");
+                    break;
+                case SensorManager.SENSOR_DELAY_UI:
+                    debugText(canvas, i++, "SENSOR_DELAY_UI");
+                    break;
+                case SensorManager.SENSOR_DELAY_NORMAL:
+                    debugText(canvas, i++, "SENSOR_DELAY_NORMAL");
+                    break;
+                default:
+                    debugText(canvas, i++, "Sensor delay " + getSensorSamplingPeriod() + "us");
                     break;
             }
             debugText(canvas, i++, getOrientationMode() + " orientationMode");
