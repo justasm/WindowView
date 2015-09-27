@@ -4,14 +4,9 @@ import android.annotation.TargetApi;
 import android.content.Context;
 import android.content.res.TypedArray;
 import android.graphics.Canvas;
-import android.graphics.Color;
-import android.graphics.Paint;
-import android.graphics.Typeface;
 import android.os.Build;
 import android.support.annotation.NonNull;
 import android.util.AttributeSet;
-import android.util.Log;
-import android.view.Surface;
 import android.widget.ImageView;
 
 import com.jmedeisis.windowview.sensor.TiltSensor;
@@ -21,13 +16,11 @@ import com.jmedeisis.windowview.sensor.TiltSensor;
  * Currently only supports {@link android.widget.ImageView.ScaleType#CENTER_CROP}.
  */
 public class WindowView extends ImageView implements TiltSensor.TiltListener {
-    private static final String LOG_TAG = "WindowView";
 
-    private float latestYaw;
     private float latestPitch;
     private float latestRoll;
 
-    private TiltSensor sensor;
+    protected TiltSensor sensor;
 
     private static final float DEFAULT_MAX_PITCH_DEGREES = 30;
     private static final float DEFAULT_MAX_ROLL_DEGREES = 30;
@@ -78,16 +71,9 @@ public class WindowView extends ImageView implements TiltSensor.TiltListener {
     private TranslateMode translateMode;
 
     // layout
-    private boolean heightMatches;
-    private float widthDifference;
-    private float heightDifference;
-
-    // debug
-    private boolean debugTilt = false;
-    private boolean debugImage = false;
-    private static final boolean DEBUG_LIFECYCLE = false;
-    private final static int DEBUG_TEXT_SIZE = 32;
-    private Paint debugTextPaint;
+    protected boolean heightMatches;
+    protected float widthDifference;
+    protected float heightDifference;
 
     public WindowView(Context context) {
         super(context);
@@ -142,11 +128,6 @@ public class WindowView extends ImageView implements TiltSensor.TiltListener {
             sensor.addListener(this);
         }
 
-        debugTextPaint = new Paint();
-        debugTextPaint.setColor(Color.MAGENTA);
-        debugTextPaint.setTextSize(DEBUG_TEXT_SIZE);
-        debugTextPaint.setTypeface(Typeface.MONOSPACE);
-
         setScaleType(ScaleType.CENTER_CROP);
     }
 
@@ -163,7 +144,6 @@ public class WindowView extends ImageView implements TiltSensor.TiltListener {
     @Override
     public void onWindowFocusChanged(boolean hasWindowFocus){
         super.onWindowFocusChanged(hasWindowFocus);
-        if(DEBUG_LIFECYCLE) Log.d(LOG_TAG, "onWindowFocusChanged(), hasWindowFocus: " + hasWindowFocus);
         if(hasWindowFocus){
             sensor.startTracking();
         } else {
@@ -174,14 +154,12 @@ public class WindowView extends ImageView implements TiltSensor.TiltListener {
     @Override
     protected void onAttachedToWindow(){
         super.onAttachedToWindow();
-        if(DEBUG_LIFECYCLE) Log.d(LOG_TAG, "onAttachedToWindow()");
         if(!isInEditMode()) sensor.startTracking();
     }
 
     @Override
     protected void onDetachedFromWindow(){
         super.onDetachedFromWindow();
-        if(DEBUG_LIFECYCLE) Log.d(LOG_TAG, "onDetachedFromWindow()");
         sensor.stopTracking();
     }
 
@@ -189,7 +167,6 @@ public class WindowView extends ImageView implements TiltSensor.TiltListener {
      * DRAWING & LAYOUT
      * ---------------------------------------------------------------------------------------------
      */
-    @SuppressWarnings("UnusedAssignment")
     @Override
     protected void onDraw(@NonNull Canvas canvas){
         // -1 -> 1
@@ -218,66 +195,9 @@ public class WindowView extends ImageView implements TiltSensor.TiltListener {
         }
         super.onDraw(canvas);
         canvas.restore();
-
-        // debug from here on!
-        int i = 0;
-        if(debugImage){
-            debugText(canvas, i++, "width      " + getWidth());
-            debugText(canvas, i++, "height     " + getHeight());
-            debugText(canvas, i++, "img width  " + getScaledImageWidth());
-            debugText(canvas, i++, "img height " + getScaledImageHeight());
-
-            debugText(canvas, i++, translateMode + " translateMode");
-
-            debugText(canvas, i++, "tx " + translateX);
-            debugText(canvas, i++, "ty " + translateY);
-            debugText(canvas, i++, "tx abs " + Math.round((widthDifference / 2) * translateX));
-            debugText(canvas, i++, "ty abs " + Math.round((heightDifference / 2) * translateY));
-            debugText(canvas, i++, "height matches " + heightMatches);
-        }
-
-        if(debugTilt){
-            debugText(canvas, i++, orientationMode + " orientationMode");
-
-            /*if(haveOrigin){
-                SensorManager.getOrientation(rotationMatrixOrigin, orientationOrigin);
-                debugText(canvas, i++, "org yaw   " + orientationOrigin[0]*DEGREES_PER_RADIAN);
-                debugText(canvas, i++, "org pitch " + orientationOrigin[1]*DEGREES_PER_RADIAN);
-                debugText(canvas, i++, "org roll  " + orientationOrigin[2]*DEGREES_PER_RADIAN);
-            }*/
-
-            debugText(canvas, i++, "yaw   " + latestYaw);
-            debugText(canvas, i++, "pitch " + latestPitch);
-            debugText(canvas, i++, "roll  " + latestRoll);
-
-            debugText(canvas, i++, "MAX_PITCH " + maxPitchDeg);
-            debugText(canvas, i++, "MAX_ROLL  " + maxRollDeg);
-
-            debugText(canvas, i++, "HOR ORIGIN " + horizontalOriginDeg);
-            debugText(canvas, i++, "VER ORIGIN " + verticalOriginDeg);
-
-            switch(sensor.getScreenRotation()){
-                case Surface.ROTATION_0:
-                    debugText(canvas, i++, "ROTATION_0");
-                    break;
-                case Surface.ROTATION_90:
-                    debugText(canvas, i++, "ROTATION_90");
-                    break;
-                case Surface.ROTATION_180:
-                    debugText(canvas, i++, "ROTATION_180");
-                    break;
-                case Surface.ROTATION_270:
-                    debugText(canvas, i++, "ROTATION_270");
-                    break;
-            }
-        }
     }
 
-    private void debugText(Canvas canvas, int i, String text){
-        canvas.drawText(text, DEBUG_TEXT_SIZE, (2 + i) * DEBUG_TEXT_SIZE, debugTextPaint);
-    }
-
-    private float clampAbsoluteFloating(float origin, float value, float maxAbsolute){
+    protected float clampAbsoluteFloating(float origin, float value, float maxAbsolute){
         return value < origin ?
                 Math.max(value, origin - maxAbsolute) : Math.min(value, origin + maxAbsolute);
     }
@@ -347,7 +267,7 @@ public class WindowView extends ImageView implements TiltSensor.TiltListener {
         return height / otherHeight < width / otherWidth;
     }
 
-    private float getScaledImageWidth(){
+    protected float getScaledImageWidth(){
         final ScaleType scaleType = getScaleType();
         float intrinsicImageWidth = getDrawable().getIntrinsicWidth();
         float intrinsicImageHeight = getDrawable().getIntrinsicHeight();
@@ -364,7 +284,7 @@ public class WindowView extends ImageView implements TiltSensor.TiltListener {
         return 0f;
     }
 
-    private float getScaledImageHeight(){
+    protected float getScaledImageHeight(){
         final ScaleType scaleType = getScaleType();
         float intrinsicImageWidth = getDrawable().getIntrinsicWidth();
         float intrinsicImageHeight = getDrawable().getIntrinsicHeight();
@@ -395,7 +315,6 @@ public class WindowView extends ImageView implements TiltSensor.TiltListener {
      */
     @Override
     public void onTiltUpdate(float yaw, float pitch, float roll) {
-        this.latestYaw = yaw;
         this.latestPitch = pitch;
         this.latestRoll = roll;
         invalidate();
@@ -431,19 +350,5 @@ public class WindowView extends ImageView implements TiltSensor.TiltListener {
 
     public OrientationMode getOrientationMode(){
         return orientationMode;
-    }
-
-    /*
-     * DEBUG
-     * ---------------------------------------------------------------------------------------------
-     */
-    /**
-     * Enables/disables on-screen debug information.
-     * @param debugTilt if true, displays on-screen information about the current tilt values and limits.
-     * @param debugImage if true, displays on-screen information about the source image and dimensions.
-     */
-    public void setDebugEnabled(boolean debugTilt, boolean debugImage){
-        this.debugTilt = debugTilt;
-        this.debugImage = debugImage;
     }
 }
