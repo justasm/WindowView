@@ -72,7 +72,7 @@ public class TiltSensor implements SensorEventListener {
 
     /** See {@link ExponentialSmoothingFilter#setSmoothingFactor(float)}. */
     private static final float SMOOTHING_FACTOR_HIGH_ACC = 0.8f;
-    private static final float SMOOTHING_FACTOR_LOW_ACC = 0.5f;
+    private static final float SMOOTHING_FACTOR_LOW_ACC = 0.05f;
 
     public TiltSensor(Context context, boolean trackRelativeOrientation){
         listeners = new ArrayList<>();
