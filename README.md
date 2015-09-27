@@ -10,7 +10,13 @@ through a window.
 
 Usage
 -----
-Use in place of an `ImageView`. An example usage in an XML layout file:
+Add it to your project using Gradle:
+
+```groovy
+compile 'com.jmedeisis:windowview:0.1.0'
+```
+
+Use in place of an `ImageView`. Example XML layout file:
 
 ```xml
 <com.jmedeisis.windowview.WindowView
@@ -19,7 +25,7 @@ Use in place of an `ImageView`. An example usage in an XML layout file:
     android:src="@drawable/my_image" />
 ```
 
-You may also refer to the included [sample application project](sample/).
+Please refer to the included [sample application project](sample/) for a complete example.
 
 Configuration
 -------------
@@ -47,8 +53,8 @@ when the method is called.
 - `translate_mode` - `Constant` or `Proportional` (default). Specifies how much the image is
 translated in response to device tilt. If `Proportional`, the image moves within the full range
 defined by `max_pitch` / `max_roll`, with the extremities of the image visible when device pitch /
-roll are at those angles. If `Constant`, the image moves a constant amount per unit of tilt which is
-defined by `max_pitch` / `max_roll` and `max_constant_translation`.
+roll is at those angles. If `Constant`, the image moves a constant amount per unit of tilt which is
+defined by `max_constant_translation`, achieved when pitch / roll are at `max_pitch` / `max_roll`.
 
 - `max_constant_translation` - see above. *Default - 150dp*
 
