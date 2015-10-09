@@ -13,7 +13,7 @@ Usage
 Add it to your project using Gradle:
 
 ```groovy
-compile 'com.jmedeisis:windowview:0.1.0'
+compile 'com.jmedeisis:windowview:0.1.1'
 ```
 
 Use in place of an `ImageView`. Example XML layout file:
