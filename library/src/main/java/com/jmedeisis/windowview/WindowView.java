@@ -4,6 +4,7 @@ import android.annotation.TargetApi;
 import android.content.Context;
 import android.content.res.TypedArray;
 import android.graphics.Canvas;
+import android.graphics.drawable.Drawable;
 import android.hardware.Sensor;
 import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
@@ -278,51 +279,51 @@ public class WindowView extends ImageView implements TiltSensor.TiltListener {
     }
 
     @Override
+    public void setImageDrawable(Drawable drawable){
+        super.setImageDrawable(drawable);
+        recalculateImageDimensions();
+    }
+
+    @Override
     protected void onSizeChanged(int w, int h, int oldw, int oldh){
         super.onSizeChanged(w, h, oldw, oldh);
-        heightMatches = !widthRatioGreater(w, h, getDrawable().getIntrinsicWidth(),
-                getDrawable().getIntrinsicHeight());
-        widthDifference = getScaledImageWidth() - getWidth();
-        heightDifference = getScaledImageHeight() - getHeight();
+        recalculateImageDimensions();
+    }
+
+    protected void recalculateImageDimensions(){
+        Drawable drawable = getDrawable();
+        if(null == drawable) return;
+
+        ScaleType scaleType = getScaleType();
+        float width = getWidth();
+        float height = getHeight();
+        float imageWidth = drawable.getIntrinsicWidth();
+        float imageHeight = drawable.getIntrinsicHeight();
+
+        heightMatches = !widthRatioGreater(width, height, imageWidth, imageHeight);
+
+        switch (scaleType){
+            case CENTER_CROP:
+                if(heightMatches){
+                    imageWidth *= height / imageHeight;
+                    imageHeight = height;
+                } else {
+                    imageWidth = width;
+                    imageHeight *= width / imageWidth;
+                }
+                widthDifference = imageWidth - width;
+                heightDifference = imageHeight - height;
+                break;
+            default:
+                widthDifference = 0;
+                heightDifference = 0;
+                break;
+        }
     }
 
     private static boolean widthRatioGreater(float width, float height,
                                              float otherWidth, float otherHeight){
         return height / otherHeight < width / otherWidth;
-    }
-
-    protected float getScaledImageWidth(){
-        final ScaleType scaleType = getScaleType();
-        float intrinsicImageWidth = getDrawable().getIntrinsicWidth();
-        float intrinsicImageHeight = getDrawable().getIntrinsicHeight();
-
-        if(ScaleType.CENTER_CROP == scaleType){
-            if(widthRatioGreater(getWidth(), getHeight(), intrinsicImageWidth, intrinsicImageHeight)){
-                intrinsicImageWidth = getWidth();
-            } else {
-                intrinsicImageWidth *= getHeight() / intrinsicImageHeight;
-            }
-            return intrinsicImageWidth;
-        }
-
-        return 0f;
-    }
-
-    protected float getScaledImageHeight(){
-        final ScaleType scaleType = getScaleType();
-        float intrinsicImageWidth = getDrawable().getIntrinsicWidth();
-        float intrinsicImageHeight = getDrawable().getIntrinsicHeight();
-
-        if(ScaleType.CENTER_CROP == scaleType){
-            if(widthRatioGreater(getWidth(), getHeight(), intrinsicImageWidth, intrinsicImageHeight)){
-                intrinsicImageHeight *= getWidth() / intrinsicImageWidth;
-            } else {
-                intrinsicImageHeight = getHeight();
-            }
-            return intrinsicImageHeight;
-        }
-
-        return 0f;
     }
 
     @Override

@@ -102,8 +102,8 @@ public class DebugWindowView extends WindowView {
         if(debugImage){
             debugText(canvas, i++, "width      " + getWidth());
             debugText(canvas, i++, "height     " + getHeight());
-            debugText(canvas, i++, "img width  " + getScaledImageWidth());
-            debugText(canvas, i++, "img height " + getScaledImageHeight());
+            debugText(canvas, i++, "img width  " + (getWidth() + widthDifference));
+            debugText(canvas, i++, "img height " + (getHeight() + heightDifference));
 
             debugText(canvas, i++, getTranslateMode() + " translateMode");
 
