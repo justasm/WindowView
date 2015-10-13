@@ -338,6 +338,15 @@ public class WindowView extends ImageView implements TiltSensor.TiltListener {
      * SENSOR DATA
      * ---------------------------------------------------------------------------------------------
      */
+    public void startTiltTracking(){
+        if(sensor.isTracking()) return;
+        sensor.startTracking(sensorSamplingPeriod);
+    }
+
+    public void stopTiltTracking(){
+        sensor.stopTracking();
+    }
+
     @Override
     public void onTiltUpdate(float yaw, float pitch, float roll) {
         this.latestPitch = pitch;
