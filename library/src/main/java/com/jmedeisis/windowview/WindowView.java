@@ -379,8 +379,18 @@ public class WindowView extends ImageView implements TiltSensor.TiltListener {
         return tiltSensorMode;
     }
 
+    /**
+     * Note - if mode is changed to
+     * {@link com.jmedeisis.windowview.WindowView.TiltSensorMode#AUTOMATIC} after WindowView has
+     * been attached to the system window and is in focus, tilt motion tracking does not start
+     * automatically. Subsequently call {@link #startTiltTracking()} to do this explicitly.
+     */
     public void setTiltSensorMode(TiltSensorMode mode){
+        if(this.tiltSensorMode == mode) return;
         this.tiltSensorMode = mode;
+        if(TiltSensorMode.AUTOMATIC == tiltSensorMode && null == sensor){
+            initSensor();
+        }
     }
 
     private void initSensor(){
