@@ -1,6 +1,1 @@
-<manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    package="com.jmedeisis.windowview">
-
-    <application android:allowBackup="true" />
-
-</manifest>
+<manifest package="com.jmedeisis.windowview"/>
