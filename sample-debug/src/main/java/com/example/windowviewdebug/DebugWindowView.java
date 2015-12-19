@@ -125,7 +125,7 @@ public class DebugWindowView extends WindowView {
 
         if(debugTilt){
             if(null == sensor) {
-                debugText(canvas, i++, "NO PRIVATE SENSOR");
+                debugText(canvas, i++, "EXTERNAL TILT SENSOR");
             } else {
                 switch (sensor.getChosenSensorType()) {
                     case 0:
@@ -141,26 +141,26 @@ public class DebugWindowView extends WindowView {
                         debugText(canvas, i++, "MAG + ACCELEROMETER");
                         break;
                 }
-            }
-            switch (getSensorSamplingPeriod()){
-                case SensorManager.SENSOR_DELAY_FASTEST:
-                    debugText(canvas, i++, "SENSOR_DELAY_FASTEST");
-                    break;
-                case SensorManager.SENSOR_DELAY_GAME:
-                    debugText(canvas, i++, "SENSOR_DELAY_GAME");
-                    break;
-                case SensorManager.SENSOR_DELAY_UI:
-                    debugText(canvas, i++, "SENSOR_DELAY_UI");
-                    break;
-                case SensorManager.SENSOR_DELAY_NORMAL:
-                    debugText(canvas, i++, "SENSOR_DELAY_NORMAL");
-                    break;
-                default:
-                    debugText(canvas, i++, "Sensor delay " + getSensorSamplingPeriod() + "us");
-                    break;
+                switch (getSensorSamplingPeriod()) {
+                    case SensorManager.SENSOR_DELAY_FASTEST:
+                        debugText(canvas, i++, "SENSOR_DELAY_FASTEST");
+                        break;
+                    case SensorManager.SENSOR_DELAY_GAME:
+                        debugText(canvas, i++, "SENSOR_DELAY_GAME");
+                        break;
+                    case SensorManager.SENSOR_DELAY_UI:
+                        debugText(canvas, i++, "SENSOR_DELAY_UI");
+                        break;
+                    case SensorManager.SENSOR_DELAY_NORMAL:
+                        debugText(canvas, i++, "SENSOR_DELAY_NORMAL");
+                        break;
+                    default:
+                        debugText(canvas, i++, "Sensor delay " + getSensorSamplingPeriod() + "us");
+                        break;
+                }
+                debugText(canvas, i++, getOrientationMode() + " orientationMode");
             }
             debugText(canvas, i++, getTiltSensorMode() + " tiltSensorMode");
-            debugText(canvas, i++, getOrientationMode() + " orientationMode");
 
             /*if(haveOrigin){
                 SensorManager.getOrientation(rotationMatrixOrigin, orientationOrigin);
