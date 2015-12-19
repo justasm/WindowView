@@ -21,15 +21,12 @@ import com.jmedeisis.windowview.sensor.TiltSensor;
  */
 public class WindowView extends ImageView implements TiltSensor.TiltListener {
 
-    private float latestPitch;
-    private float latestRoll;
-
-    protected TiltSensor sensor;
-
     private static final float DEFAULT_MAX_PITCH_DEGREES = 30;
     private static final float DEFAULT_MAX_ROLL_DEGREES = 30;
     private static final float DEFAULT_HORIZONTAL_ORIGIN_DEGREES = 0;
     private static final float DEFAULT_VERTICAL_ORIGIN_DEGREES = 0;
+    private float latestPitch;
+    private float latestRoll;
     private float maxPitchDeg;
     private float maxRollDeg;
     private float horizontalOriginDeg;
@@ -89,12 +86,21 @@ public class WindowView extends ImageView implements TiltSensor.TiltListener {
          */
         AUTOMATIC,
         /**
-         * Tilt motion tracking must be manually initiated and stopped.
-         * Good candidate opportunities to do this are the container Activity's / Fragment's
-         * onPause() and onResume() lifecycle events.
-         * <p>
-         * This mode is recommended when using multiple WindowViews in a layout.
-         * <p>
+         * Tilt motion tracking must be manually initiated and stopped. There are two options:
+         * <ul>
+         *     <li>Use {@link #startTiltTracking()} and {@link #stopTiltTracking()}.
+         *     Good candidate opportunities to do this are the container Activity's / Fragment's
+         *     onResume() and onPause() lifecycle events.</li>
+         *
+         *     <li>Use {@link #attachTiltTracking(TiltSensor)} and
+         *     {@link #detachTiltTracking(TiltSensor)}. This mode is recommended when using multiple
+         *     WindowViews in a single logical layout. The externally managed {@link TiltSensor}
+         *     should be started and stopped using {@link TiltSensor#startTracking(int)} and
+         *     {@link TiltSensor#stopTracking()} as appropriate. Good candidate opportunities to do
+         *     this are the container Activity's / Fragment's onResume() and onPause() lifecycle
+         *     events.</li>
+         * </ul>
+         *
          * Note that in this mode, care must be taken to stop motion tracking at the appropriate
          * lifecycle events to ensure that hardware sensors are detached and do not cause
          * unnecessary battery drain.
@@ -103,6 +109,8 @@ public class WindowView extends ImageView implements TiltSensor.TiltListener {
     }
     private static final TiltSensorMode DEFAULT_TILT_SENSOR_MODE = TiltSensorMode.AUTOMATIC;
     private TiltSensorMode tiltSensorMode;
+
+    protected TiltSensor sensor;
 
     // layout
     protected boolean heightMatches;
@@ -377,20 +385,6 @@ public class WindowView extends ImageView implements TiltSensor.TiltListener {
      */
     public TiltSensorMode getTiltSensorMode(){
         return tiltSensorMode;
-    }
-
-    /**
-     * Note - if mode is changed to
-     * {@link com.jmedeisis.windowview.WindowView.TiltSensorMode#AUTOMATIC} after WindowView has
-     * been attached to the system window and is in focus, tilt motion tracking does not start
-     * automatically. Subsequently call {@link #startTiltTracking()} to do this explicitly.
-     */
-    public void setTiltSensorMode(TiltSensorMode mode){
-        if(this.tiltSensorMode == mode) return;
-        this.tiltSensorMode = mode;
-        if(TiltSensorMode.AUTOMATIC == tiltSensorMode && null == sensor){
-            initSensor();
-        }
     }
 
     private void initSensor(){
