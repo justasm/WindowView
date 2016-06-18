@@ -7,8 +7,8 @@ android {
 
     defaultConfig {
         minSdkVersion 9
-        versionCode 2
-        versionName "0.1.1"
+        versionCode 3
+        versionName "0.2.0"
     }
     buildTypes {
         release {
@@ -39,7 +39,7 @@ publish {
     userOrg = 'justasm'
     groupId = 'com.jmedeisis'
     artifactId = 'windowview'
-    version = "0.1.1"
+    version = "0.2.0"
     licences = ['MIT']
     desc = "An Android ImageView you pan by tilting your device."
     website = 'https://github.com/justasm/WindowView'
