@@ -290,7 +290,7 @@ public class WindowView extends ImageView implements TiltSensor.TiltListener {
         recalculateImageDimensions();
     }
 
-    protected void recalculateImageDimensions(){
+    private void recalculateImageDimensions(){
         Drawable drawable = getDrawable();
         if(null == drawable) return;
 

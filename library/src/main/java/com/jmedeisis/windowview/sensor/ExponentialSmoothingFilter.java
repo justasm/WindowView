@@ -7,10 +7,12 @@ package com.jmedeisis.windowview.sensor;
 public class ExponentialSmoothingFilter implements Filter {
 
     private float lastValue;
-    /** 0-1. See {@link #setSmoothingFactor(float)}. */
+    /**
+     * 0-1. See {@link #setSmoothingFactor(float)}.
+     */
     private float factor;
 
-    public ExponentialSmoothingFilter(float smoothingFactor, float initialValue){
+    public ExponentialSmoothingFilter(float smoothingFactor, float initialValue) {
         this.factor = smoothingFactor;
         reset(initialValue);
     }
@@ -22,29 +24,32 @@ public class ExponentialSmoothingFilter implements Filter {
      *               The closer to 0, the greater the inertia, i.e. the filter responds more slowly
      *               to new input values.
      */
-    public void setSmoothingFactor(float factor){
+    public void setSmoothingFactor(float factor) {
         this.factor = factor;
     }
 
     @Override
-    public void reset(float value){
+    public void reset(float value) {
         lastValue = value;
     }
 
     /**
      * Pushes new sample to filter.
+     *
      * @return new smoothed value.
      */
     @Override
-    public float push(float value){
+    public float push(float value) {
         // do low-pass
         lastValue = lastValue + factor * (value - lastValue);
         return get();
     }
 
-    /** @return smoothed value. */
+    /**
+     * @return smoothed value.
+     */
     @Override
-    public float get(){
+    public float get() {
         return lastValue;
     }
 }

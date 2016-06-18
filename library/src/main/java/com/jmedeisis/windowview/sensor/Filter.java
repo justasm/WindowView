@@ -6,6 +6,7 @@ package com.jmedeisis.windowview.sensor;
 public interface Filter {
     /**
      * Update filter with the latest value.
+     *
      * @return latest filtered value.
      */
     float push(float value);
