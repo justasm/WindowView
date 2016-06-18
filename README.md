@@ -62,6 +62,18 @@ defined by `max_constant_translation`, achieved when pitch / roll are at `max_pi
 `normal` (default) or `slow`. If using microsecond values, higher values result in slower sensor
 updates. Directly related to the rate at which `WindowView` updates in response to device tilt.
 
+- `tilt_sensor_mode` - `Manual` or `Automatic` (default). Specifies whether `WindowView` is
+responsible for when tilt motion tracking starts and stops. If `Automatic`, `WindowView` works out
+of the box and requires no extra configuration. If `Manual`, you must explicitly start and stop tilt
+motion tracking. You have two options:
+    * Use `WindowView#startTiltTracking()` and `WindowView#stopTiltTracking()`, e.g. in your
+    `Activity`'s `onResume()` and `onPause()`, respectively.
+
+    * Use `WindowView#attachTiltTracking(TiltSensor)` and
+    `WindowView#detachTiltTracking(TiltSensor)`. This approach is recommended when using multiple
+    `WindowView`s in a single logical layout. The externally managed `TiltSensor` should be started
+    and stopped using `TiltSensor#startTracking(int)` and `TiltSensor#stopTracking()` as appropriate.
+
 Example configuration:
 
 ```xml
@@ -69,6 +81,7 @@ Example configuration:
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:src="@drawable/my_image"
+    app:tilt_sensor_mode="Manual"
     app:orientation_mode="Relative"
     app:translate_mode="Constant"
     app:max_constant_translation="100dp"

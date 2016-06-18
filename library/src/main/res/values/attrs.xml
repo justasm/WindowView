@@ -17,6 +17,11 @@
         <attr name="vertical_origin" format="float" />
         <attr name="horizontal_origin" format="float" />
 
+        <attr name="tilt_sensor_mode" format="enum">
+            <enum name="Automatic" value="0" />
+            <enum name="Manual" value="1" />
+        </attr>
+
         <attr name="orientation_mode" format="enum">
             <enum name="Absolute" value="0" />
             <enum name="Relative" value="1" />

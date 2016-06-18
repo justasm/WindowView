@@ -2,6 +2,7 @@ package com.example.windowviewdebug;
 
 import android.annotation.TargetApi;
 import android.content.pm.ActivityInfo;
+import android.hardware.SensorManager;
 import android.os.Build;
 import android.os.Bundle;
 import android.support.v4.view.GravityCompat;
@@ -21,6 +22,7 @@ public class DebugActivity extends AppCompatActivity {
     private static final String DEBUG_IMAGE = "debugImage";
     private boolean debugTilt;
     private boolean debugImage;
+    private TiltSensor tiltSensor;
     private DebugWindowView windowView1;
     private DebugWindowView windowView2;
 
@@ -29,17 +31,19 @@ public class DebugActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_debug);
 
+        tiltSensor = new TiltSensor(this, true);
+
         windowView1 = (DebugWindowView) findViewById(R.id.windowView1);
         windowView2 = (DebugWindowView) findViewById(R.id.windowView2);
-        /*
-         * For sake of demo interface simplicity & compass visualisation, tapping on either
-         * WindowView resets both of their orientation origins.
-         * Typically, this would be done individually.
-         */
+
+        // use one TiltSensor to drive both WindowViews
+        windowView1.attachTiltTracking(tiltSensor);
+        windowView2.attachTiltTracking(tiltSensor);
+
         View.OnClickListener onClickListener = new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                resetWindowViewOrientationOrigins();
+                resetTiltSensorOrientationOrigin();
             }
         };
         windowView1.setOnClickListener(onClickListener);
@@ -63,6 +67,18 @@ public class DebugActivity extends AppCompatActivity {
     }
 
     @Override
+    public void onResume() {
+        super.onResume();
+        tiltSensor.startTracking(SensorManager.SENSOR_DELAY_FASTEST);
+    }
+
+    @Override
+    public void onPause() {
+        super.onPause();
+        tiltSensor.stopTracking();
+    }
+
+    @Override
     public void onSaveInstanceState(Bundle outState) {
         super.onSaveInstanceState(outState);
         outState.putInt(ORIENTATION, getRequestedOrientation());
@@ -81,10 +97,11 @@ public class DebugActivity extends AppCompatActivity {
         menu.findItem(R.id.action_debug_image).setChecked(debugImage);
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB) {
+            // display 3D-ish icon representation of absolute device orientation
             final View actionView = View.inflate(this, R.layout.device_compass, null);
             final View xy = actionView.findViewById(R.id.compass_xy);
             final View z = actionView.findViewById(R.id.compass_z);
-            windowView1.addTiltListener(new TiltSensor.TiltListener() {
+            tiltSensor.addListener(new TiltSensor.TiltListener() {
                 @Override
                 public void onTiltUpdate(float yaw, float pitch, float roll) {
                     xy.setRotation(yaw);
@@ -99,7 +116,7 @@ public class DebugActivity extends AppCompatActivity {
             actionView.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
-                    resetWindowViewOrientationOrigins();
+                    resetTiltSensorOrientationOrigin();
                 }
             });
             actionView.setOnLongClickListener(new View.OnLongClickListener() {
@@ -123,9 +140,8 @@ public class DebugActivity extends AppCompatActivity {
         return true;
     }
 
-    private void resetWindowViewOrientationOrigins() {
-        windowView1.resetOrientationOrigin(false);
-        windowView2.resetOrientationOrigin(false);
+    private void resetTiltSensorOrientationOrigin() {
+        tiltSensor.resetOrigin(false);
         Toast.makeText(DebugActivity.this, R.string.hint_orientation_reset, Toast.LENGTH_SHORT).show();
     }
 

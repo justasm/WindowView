@@ -7,6 +7,8 @@
 
     <style name="WindowViewBase">
         <item name="android:contentDescription">@string/content_description</item>
+
+        <item name="tilt_sensor_mode">Manual</item>
     </style>
 
     <style name="WindowViewOne" parent="WindowViewBase">

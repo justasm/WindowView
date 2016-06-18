@@ -77,6 +77,7 @@ public class DebugWindowView extends WindowView {
     public void setDebugEnabled(boolean debugTilt, boolean debugImage) {
         this.debugTilt = debugTilt;
         this.debugImage = debugImage;
+        invalidate();
     }
 
     @Override
@@ -97,7 +98,6 @@ public class DebugWindowView extends WindowView {
         super.onDetachedFromWindow();
         if (DEBUG_LIFECYCLE) Log.d(LOG_TAG, "onDetachedFromWindow()");
     }
-
 
     @SuppressWarnings("UnusedAssignment")
     @Override
@@ -130,38 +130,43 @@ public class DebugWindowView extends WindowView {
         }
 
         if (debugTilt) {
-            switch (sensor.getChosenSensorType()) {
-                case 0:
-                    debugText(canvas, i++, "NO AVAILABLE SENSOR");
-                    break;
-                case Sensor.TYPE_ROTATION_VECTOR:
-                    debugText(canvas, i++, "ROTATION_VECTOR");
-                    break;
-                case Sensor.TYPE_GRAVITY:
-                    debugText(canvas, i++, "MAG + GRAVITY");
-                    break;
-                case Sensor.TYPE_ACCELEROMETER:
-                    debugText(canvas, i++, "MAG + ACCELEROMETER");
-                    break;
+            if (null == sensor) {
+                debugText(canvas, i++, "EXTERNAL TILT SENSOR");
+            } else {
+                switch (sensor.getChosenSensorType()) {
+                    case 0:
+                        debugText(canvas, i++, "NO AVAILABLE SENSOR");
+                        break;
+                    case Sensor.TYPE_ROTATION_VECTOR:
+                        debugText(canvas, i++, "ROTATION_VECTOR");
+                        break;
+                    case Sensor.TYPE_GRAVITY:
+                        debugText(canvas, i++, "MAG + GRAVITY");
+                        break;
+                    case Sensor.TYPE_ACCELEROMETER:
+                        debugText(canvas, i++, "MAG + ACCELEROMETER");
+                        break;
+                }
+                switch (getSensorSamplingPeriod()) {
+                    case SensorManager.SENSOR_DELAY_FASTEST:
+                        debugText(canvas, i++, "SENSOR_DELAY_FASTEST");
+                        break;
+                    case SensorManager.SENSOR_DELAY_GAME:
+                        debugText(canvas, i++, "SENSOR_DELAY_GAME");
+                        break;
+                    case SensorManager.SENSOR_DELAY_UI:
+                        debugText(canvas, i++, "SENSOR_DELAY_UI");
+                        break;
+                    case SensorManager.SENSOR_DELAY_NORMAL:
+                        debugText(canvas, i++, "SENSOR_DELAY_NORMAL");
+                        break;
+                    default:
+                        debugText(canvas, i++, "Sensor delay " + getSensorSamplingPeriod() + "us");
+                        break;
+                }
+                debugText(canvas, i++, getOrientationMode() + " orientationMode");
             }
-            switch (getSensorSamplingPeriod()) {
-                case SensorManager.SENSOR_DELAY_FASTEST:
-                    debugText(canvas, i++, "SENSOR_DELAY_FASTEST");
-                    break;
-                case SensorManager.SENSOR_DELAY_GAME:
-                    debugText(canvas, i++, "SENSOR_DELAY_GAME");
-                    break;
-                case SensorManager.SENSOR_DELAY_UI:
-                    debugText(canvas, i++, "SENSOR_DELAY_UI");
-                    break;
-                case SensorManager.SENSOR_DELAY_NORMAL:
-                    debugText(canvas, i++, "SENSOR_DELAY_NORMAL");
-                    break;
-                default:
-                    debugText(canvas, i++, "Sensor delay " + getSensorSamplingPeriod() + "us");
-                    break;
-            }
-            debugText(canvas, i++, getOrientationMode() + " orientationMode");
+            debugText(canvas, i++, getTiltSensorMode() + " tiltSensorMode");
 
             /*if(haveOrigin){
                 SensorManager.getOrientation(rotationMatrixOrigin, orientationOrigin);
@@ -180,19 +185,21 @@ public class DebugWindowView extends WindowView {
             debugText(canvas, i++, "HOR ORIGIN " + getHorizontalOrigin());
             debugText(canvas, i++, "VER ORIGIN " + getVerticalOrigin());
 
-            switch (sensor.getScreenRotation()) {
-                case Surface.ROTATION_0:
-                    debugText(canvas, i++, "ROTATION_0");
-                    break;
-                case Surface.ROTATION_90:
-                    debugText(canvas, i++, "ROTATION_90");
-                    break;
-                case Surface.ROTATION_180:
-                    debugText(canvas, i++, "ROTATION_180");
-                    break;
-                case Surface.ROTATION_270:
-                    debugText(canvas, i++, "ROTATION_270");
-                    break;
+            if (null != sensor) {
+                switch (sensor.getScreenRotation()) {
+                    case Surface.ROTATION_0:
+                        debugText(canvas, i++, "ROTATION_0");
+                        break;
+                    case Surface.ROTATION_90:
+                        debugText(canvas, i++, "ROTATION_90");
+                        break;
+                    case Surface.ROTATION_180:
+                        debugText(canvas, i++, "ROTATION_180");
+                        break;
+                    case Surface.ROTATION_270:
+                        debugText(canvas, i++, "ROTATION_270");
+                        break;
+                }
             }
         }
     }
