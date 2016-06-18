@@ -35,9 +35,13 @@ public class WindowView extends ImageView implements TiltSensor.TiltListener {
     private static final int DEFAULT_SENSOR_SAMPLING_PERIOD_US = SensorManager.SENSOR_DELAY_GAME;
     private int sensorSamplingPeriod;
 
-    /** Determines the basis in which device orientation is measured. */
+    /**
+     * Determines the basis in which device orientation is measured.
+     */
     public enum OrientationMode {
-        /** Measures absolute yaw / pitch / roll (i.e. relative to the world). */
+        /**
+         * Measures absolute yaw / pitch / roll (i.e. relative to the world).
+         */
         ABSOLUTE,
         /**
          * Measures yaw / pitch / roll relative to the starting orientation.
@@ -46,13 +50,16 @@ public class WindowView extends ImageView implements TiltSensor.TiltListener {
          */
         RELATIVE
     }
+
     private static final OrientationMode DEFAULT_ORIENTATION_MODE = OrientationMode.RELATIVE;
     private OrientationMode orientationMode;
 
     private static final float DEFAULT_MAX_CONSTANT_TRANSLATION_DP = 150;
     private float maxConstantTranslation;
 
-    /** Determines the relationship between change in device tilt and change in image translation. */
+    /**
+     * Determines the relationship between change in device tilt and change in image translation.
+     */
     public enum TranslateMode {
         /**
          * The image is translated by a constant amount per unit of device tilt.
@@ -71,10 +78,13 @@ public class WindowView extends ImageView implements TiltSensor.TiltListener {
          */
         PROPORTIONAL
     }
+
     private static final TranslateMode DEFAULT_TRANSLATE_MODE = TranslateMode.PROPORTIONAL;
     private TranslateMode translateMode;
 
-    /** Determines when and how tilt motion tracking starts and stops. */
+    /**
+     * Determines when and how tilt motion tracking starts and stops.
+     */
     public enum TiltSensorMode {
         /**
          * Tilt motion tracking is completely automated and requires no explicit intervention.
@@ -88,25 +98,26 @@ public class WindowView extends ImageView implements TiltSensor.TiltListener {
         /**
          * Tilt motion tracking must be manually initiated and stopped. There are two options:
          * <ul>
-         *     <li>Use {@link #startTiltTracking()} and {@link #stopTiltTracking()}.
-         *     Good candidate opportunities to do this are the container Activity's / Fragment's
-         *     onResume() and onPause() lifecycle events.</li>
-         *
-         *     <li>Use {@link #attachTiltTracking(TiltSensor)} and
-         *     {@link #detachTiltTracking(TiltSensor)}. This mode is recommended when using multiple
-         *     WindowViews in a single logical layout. The externally managed {@link TiltSensor}
-         *     should be started and stopped using {@link TiltSensor#startTracking(int)} and
-         *     {@link TiltSensor#stopTracking()} as appropriate. Good candidate opportunities to do
-         *     this are the container Activity's / Fragment's onResume() and onPause() lifecycle
-         *     events.</li>
+         * <li>Use {@link #startTiltTracking()} and {@link #stopTiltTracking()}.
+         * Good candidate opportunities to do this are the container Activity's / Fragment's
+         * onResume() and onPause() lifecycle events.</li>
+         * <p>
+         * <li>Use {@link #attachTiltTracking(TiltSensor)} and
+         * {@link #detachTiltTracking(TiltSensor)}. This mode is recommended when using multiple
+         * WindowViews in a single logical layout. The externally managed {@link TiltSensor}
+         * should be started and stopped using {@link TiltSensor#startTracking(int)} and
+         * {@link TiltSensor#stopTracking()} as appropriate. Good candidate opportunities to do
+         * this are the container Activity's / Fragment's onResume() and onPause() lifecycle
+         * events.</li>
          * </ul>
-         *
+         * <p>
          * Note that in this mode, care must be taken to stop motion tracking at the appropriate
          * lifecycle events to ensure that hardware sensors are detached and do not cause
          * unnecessary battery drain.
          */
         MANUAL
     }
+
     private static final TiltSensorMode DEFAULT_TILT_SENSOR_MODE = TiltSensorMode.AUTOMATIC;
     private TiltSensorMode tiltSensorMode;
 
@@ -138,7 +149,7 @@ public class WindowView extends ImageView implements TiltSensor.TiltListener {
         init(context, attrs);
     }
 
-    protected void init(Context context, AttributeSet attrs){
+    protected void init(Context context, AttributeSet attrs) {
         sensorSamplingPeriod = DEFAULT_SENSOR_SAMPLING_PERIOD_US;
         maxPitchDeg = DEFAULT_MAX_PITCH_DEGREES;
         maxRollDeg = DEFAULT_MAX_ROLL_DEGREES;
@@ -150,7 +161,7 @@ public class WindowView extends ImageView implements TiltSensor.TiltListener {
         maxConstantTranslation = DEFAULT_MAX_CONSTANT_TRANSLATION_DP *
                 getResources().getDisplayMetrics().density;
 
-        if(null != attrs){
+        if (null != attrs) {
             final TypedArray a = context.obtainStyledAttributes(attrs, R.styleable.WindowView);
             sensorSamplingPeriod = a.getInt(R.styleable.WindowView_sensor_sampling_period,
                     sensorSamplingPeriod);
@@ -162,15 +173,15 @@ public class WindowView extends ImageView implements TiltSensor.TiltListener {
                     horizontalOriginDeg);
 
             int tiltSensorModeIndex = a.getInt(R.styleable.WindowView_tilt_sensor_mode, -1);
-            if(tiltSensorModeIndex >= 0){
+            if (tiltSensorModeIndex >= 0) {
                 tiltSensorMode = TiltSensorMode.values()[tiltSensorModeIndex];
             }
             int orientationModeIndex = a.getInt(R.styleable.WindowView_orientation_mode, -1);
-            if(orientationModeIndex >= 0){
+            if (orientationModeIndex >= 0) {
                 orientationMode = OrientationMode.values()[orientationModeIndex];
             }
             int translateModeIndex = a.getInt(R.styleable.WindowView_translate_mode, -1);
-            if(translateModeIndex >= 0){
+            if (translateModeIndex >= 0) {
                 translateMode = TranslateMode.values()[translateModeIndex];
             }
 
@@ -179,7 +190,7 @@ public class WindowView extends ImageView implements TiltSensor.TiltListener {
             a.recycle();
         }
 
-        if(!isInEditMode() && TiltSensorMode.AUTOMATIC == tiltSensorMode) {
+        if (!isInEditMode() && TiltSensorMode.AUTOMATIC == tiltSensorMode) {
             initSensor();
         }
 
@@ -197,9 +208,9 @@ public class WindowView extends ImageView implements TiltSensor.TiltListener {
      * ---------------------------------------------------------------------------------------------
      */
     @Override
-    public void onWindowFocusChanged(boolean hasWindowFocus){
+    public void onWindowFocusChanged(boolean hasWindowFocus) {
         super.onWindowFocusChanged(hasWindowFocus);
-        if(null != sensor && TiltSensorMode.AUTOMATIC == tiltSensorMode) {
+        if (null != sensor && TiltSensorMode.AUTOMATIC == tiltSensorMode) {
             if (hasWindowFocus) {
                 sensor.startTracking(sensorSamplingPeriod);
             } else {
@@ -209,17 +220,17 @@ public class WindowView extends ImageView implements TiltSensor.TiltListener {
     }
 
     @Override
-    protected void onAttachedToWindow(){
+    protected void onAttachedToWindow() {
         super.onAttachedToWindow();
-        if(!isInEditMode() && null != sensor && TiltSensorMode.AUTOMATIC == tiltSensorMode){
+        if (!isInEditMode() && null != sensor && TiltSensorMode.AUTOMATIC == tiltSensorMode) {
             sensor.startTracking(sensorSamplingPeriod);
         }
     }
 
     @Override
-    protected void onDetachedFromWindow(){
+    protected void onDetachedFromWindow() {
         super.onDetachedFromWindow();
-        if(null != sensor && TiltSensorMode.AUTOMATIC == tiltSensorMode){
+        if (null != sensor && TiltSensorMode.AUTOMATIC == tiltSensorMode) {
             sensor.stopTracking();
         }
     }
@@ -229,11 +240,11 @@ public class WindowView extends ImageView implements TiltSensor.TiltListener {
      * ---------------------------------------------------------------------------------------------
      */
     @Override
-    protected void onDraw(@NonNull Canvas canvas){
+    protected void onDraw(@NonNull Canvas canvas) {
         // -1 -> 1
         float xOffset = 0f;
         float yOffset = 0f;
-        if(heightMatches){
+        if (heightMatches) {
             // only let user tilt horizontally
             xOffset = (-horizontalOriginDeg +
                     clampAbsoluteFloating(horizontalOriginDeg, latestRoll, maxRollDeg)) / maxRollDeg;
@@ -243,7 +254,7 @@ public class WindowView extends ImageView implements TiltSensor.TiltListener {
                     clampAbsoluteFloating(verticalOriginDeg, latestPitch, maxPitchDeg)) / maxPitchDeg;
         }
         canvas.save();
-        switch(translateMode){
+        switch (translateMode) {
             case CONSTANT:
                 canvas.translate(
                         clampAbsoluteFloating(0, maxConstantTranslation * xOffset, widthDifference / 2),
@@ -258,30 +269,36 @@ public class WindowView extends ImageView implements TiltSensor.TiltListener {
         canvas.restore();
     }
 
-    protected float clampAbsoluteFloating(float origin, float value, float maxAbsolute){
+    protected float clampAbsoluteFloating(float origin, float value, float maxAbsolute) {
         return value < origin ?
                 Math.max(value, origin - maxAbsolute) : Math.min(value, origin + maxAbsolute);
     }
 
-    /** See {@link TranslateMode}. */
-    public void setTranslateMode(TranslateMode translateMode){
+    /**
+     * See {@link TranslateMode}.
+     */
+    public void setTranslateMode(TranslateMode translateMode) {
         this.translateMode = translateMode;
     }
 
-    public TranslateMode getTranslateMode(){
+    public TranslateMode getTranslateMode() {
         return translateMode;
     }
 
-    /** Maximum image translation from center when using {@link TranslateMode#CONSTANT}. */
-    public void setMaxConstantTranslation(float maxConstantTranslation){
+    /**
+     * Maximum image translation from center when using {@link TranslateMode#CONSTANT}.
+     */
+    public void setMaxConstantTranslation(float maxConstantTranslation) {
         this.maxConstantTranslation = maxConstantTranslation;
     }
 
-    public float getMaxConstantTranslation(){
+    public float getMaxConstantTranslation() {
         return maxConstantTranslation;
     }
 
-    /** Maximum angle (in degrees) from origin for vertical tilts. */
+    /**
+     * Maximum angle (in degrees) from origin for vertical tilts.
+     */
     public void setMaxPitch(float maxPitch) {
         this.maxPitchDeg = maxPitch;
     }
@@ -290,7 +307,9 @@ public class WindowView extends ImageView implements TiltSensor.TiltListener {
         return maxPitchDeg;
     }
 
-    /** Maximum angle (in degrees) from origin for horizontal tilts. */
+    /**
+     * Maximum angle (in degrees) from origin for horizontal tilts.
+     */
     public void setMaxRoll(float maxRoll) {
         this.maxRollDeg = maxRoll;
     }
@@ -324,20 +343,20 @@ public class WindowView extends ImageView implements TiltSensor.TiltListener {
     }
 
     @Override
-    public void setImageDrawable(Drawable drawable){
+    public void setImageDrawable(Drawable drawable) {
         super.setImageDrawable(drawable);
         recalculateImageDimensions();
     }
 
     @Override
-    protected void onSizeChanged(int w, int h, int oldw, int oldh){
+    protected void onSizeChanged(int w, int h, int oldw, int oldh) {
         super.onSizeChanged(w, h, oldw, oldh);
         recalculateImageDimensions();
     }
 
-    protected void recalculateImageDimensions(){
+    private void recalculateImageDimensions() {
         Drawable drawable = getDrawable();
-        if(null == drawable) return;
+        if (null == drawable) return;
 
         ScaleType scaleType = getScaleType();
         float width = getWidth();
@@ -347,9 +366,9 @@ public class WindowView extends ImageView implements TiltSensor.TiltListener {
 
         heightMatches = !widthRatioGreater(width, height, imageWidth, imageHeight);
 
-        switch (scaleType){
+        switch (scaleType) {
             case CENTER_CROP:
-                if(heightMatches){
+                if (heightMatches) {
                     imageWidth *= height / imageHeight;
                     imageHeight = height;
                 } else {
@@ -367,13 +386,13 @@ public class WindowView extends ImageView implements TiltSensor.TiltListener {
     }
 
     private static boolean widthRatioGreater(float width, float height,
-                                             float otherWidth, float otherHeight){
+                                             float otherWidth, float otherHeight) {
         return height / otherHeight < width / otherWidth;
     }
 
     @Override
-    public void setScaleType(ScaleType scaleType){
-        if(ScaleType.CENTER_CROP != scaleType)
+    public void setScaleType(ScaleType scaleType) {
+        if (ScaleType.CENTER_CROP != scaleType)
             throw new IllegalArgumentException("Image scale type " + scaleType +
                     " is not supported by WindowView. Use CENTER_CROP instead.");
         super.setScaleType(scaleType);
@@ -383,11 +402,11 @@ public class WindowView extends ImageView implements TiltSensor.TiltListener {
      * SENSOR DATA
      * ---------------------------------------------------------------------------------------------
      */
-    public TiltSensorMode getTiltSensorMode(){
+    public TiltSensorMode getTiltSensorMode() {
         return tiltSensorMode;
     }
 
-    private void initSensor(){
+    private void initSensor() {
         sensor = new TiltSensor(getContext(), orientationMode == OrientationMode.RELATIVE);
         sensor.addListener(this);
     }
@@ -395,11 +414,11 @@ public class WindowView extends ImageView implements TiltSensor.TiltListener {
     /**
      * If tilt motion tracking is not in progress, start it.
      */
-    public void startTiltTracking(){
-        if(null == sensor){
+    public void startTiltTracking() {
+        if (null == sensor) {
             // this will be the case if tiltSensorMode == TiltSensorMode.MANUAL
             initSensor();
-        } else if(sensor.isTracking()){
+        } else if (sensor.isTracking()) {
             return;
         }
         sensor.startTracking(sensorSamplingPeriod);
@@ -409,10 +428,10 @@ public class WindowView extends ImageView implements TiltSensor.TiltListener {
      * Stop tilt motion tracking.
      *
      * @throws IllegalStateException if {@link #getTiltSensorMode()} is {@link TiltSensorMode#MANUAL}
-     *         and {@link #startTiltTracking()} was not called prior.
+     *                               and {@link #startTiltTracking()} was not called prior.
      */
-    public void stopTiltTracking(){
-        if(null == sensor){
+    public void stopTiltTracking() {
+        if (null == sensor) {
             throw new IllegalStateException(
                     "WindowView does not have its own tilt sensor, cannot stop tracking.");
         }
@@ -426,22 +445,22 @@ public class WindowView extends ImageView implements TiltSensor.TiltListener {
      *
      * @param externalSensor an externally managed {@link TiltSensor}.
      * @throws IllegalStateException if {@link #getTiltSensorMode()} is not
-     *         {@link TiltSensorMode#MANUAL}.
+     *                               {@link TiltSensorMode#MANUAL}.
      */
-    public void attachTiltTracking(TiltSensor externalSensor){
-        if(TiltSensorMode.MANUAL != tiltSensorMode){
+    public void attachTiltTracking(TiltSensor externalSensor) {
+        if (TiltSensorMode.MANUAL != tiltSensorMode) {
             // WindowView has its own tilt sensor, cannot attach external one.
             throw new IllegalStateException(
                     "External tilt sensor can only be attached if tilt sensor mode is set to MANUAL.");
         }
-        if(null != sensor){
+        if (null != sensor) {
             // will be the case if #startTiltTracking() was called previously
-            if(sensor.isTracking()) sensor.stopTracking();
+            if (sensor.isTracking()) sensor.stopTracking();
         }
         externalSensor.addListener(this);
     }
 
-    public void detachTiltTracking(TiltSensor externalSensor){
+    public void detachTiltTracking(TiltSensor externalSensor) {
         externalSensor.removeListener(this);
     }
 
@@ -452,16 +471,16 @@ public class WindowView extends ImageView implements TiltSensor.TiltListener {
         invalidate();
     }
 
-    public void addTiltListener(TiltSensor.TiltListener listener){
-        if(null == sensor){
+    public void addTiltListener(TiltSensor.TiltListener listener) {
+        if (null == sensor) {
             throw new IllegalStateException(
                     "WindowView does not have its own tilt sensor, cannot add listener.");
         }
         sensor.addListener(listener);
     }
 
-    public void removeTiltListener(TiltSensor.TiltListener listener){
-        if(null == sensor){
+    public void removeTiltListener(TiltSensor.TiltListener listener) {
+        if (null == sensor) {
             throw new IllegalStateException(
                     "WindowView does not have its own tilt sensor, cannot remove listener.");
         }
@@ -474,8 +493,8 @@ public class WindowView extends ImageView implements TiltSensor.TiltListener {
      *
      * @param immediate if false, the sensor values smoothly interpolate to the new origin.
      */
-    public void resetOrientationOrigin(boolean immediate){
-        if(null == sensor){
+    public void resetOrientationOrigin(boolean immediate) {
+        if (null == sensor) {
             throw new IllegalStateException(
                     "WindowView does not have its own tilt sensor, cannot reset orientation origin.");
         }
@@ -486,31 +505,33 @@ public class WindowView extends ImageView implements TiltSensor.TiltListener {
      * Determines the mapping of orientation to image offset.
      * See {@link OrientationMode}.
      */
-    public void setOrientationMode(OrientationMode orientationMode){
+    public void setOrientationMode(OrientationMode orientationMode) {
         this.orientationMode = orientationMode;
-        if(null != sensor) {
+        if (null != sensor) {
             sensor.setTrackRelativeOrientation(orientationMode == OrientationMode.RELATIVE);
             sensor.resetOrigin(true);
         }
     }
 
-    public OrientationMode getOrientationMode(){
+    public OrientationMode getOrientationMode() {
         return orientationMode;
     }
 
     /**
      * @param samplingPeriodUs see {@link SensorManager#registerListener(SensorEventListener, Sensor, int)}
      */
-    public void setSensorSamplingPeriod(int samplingPeriodUs){
+    public void setSensorSamplingPeriod(int samplingPeriodUs) {
         this.sensorSamplingPeriod = samplingPeriodUs;
-        if(null != sensor && sensor.isTracking()){
+        if (null != sensor && sensor.isTracking()) {
             sensor.stopTracking();
             sensor.startTracking(this.sensorSamplingPeriod);
         }
     }
 
-    /** @return sensor sampling period (in microseconds). */
-    public int getSensorSamplingPeriod(){
+    /**
+     * @return sensor sampling period (in microseconds).
+     */
+    public int getSensorSamplingPeriod() {
         return sensorSamplingPeriod;
     }
 }

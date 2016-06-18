@@ -1,5 +1,6 @@
 package com.example.windowviewdebug;
 
+import android.annotation.TargetApi;
 import android.content.Context;
 import android.graphics.Canvas;
 import android.graphics.Color;
@@ -7,6 +8,7 @@ import android.graphics.Paint;
 import android.graphics.Typeface;
 import android.hardware.Sensor;
 import android.hardware.SensorManager;
+import android.os.Build;
 import android.support.annotation.NonNull;
 import android.util.AttributeSet;
 import android.util.Log;
@@ -42,12 +44,14 @@ public class DebugWindowView extends WindowView {
         super(context, attrs, defStyleAttr);
     }
 
+    @SuppressWarnings("unused")
+    @TargetApi(Build.VERSION_CODES.LOLLIPOP)
     public DebugWindowView(Context context, AttributeSet attrs, int defStyleAttr, int defStyleRes) {
         super(context, attrs, defStyleAttr, defStyleRes);
     }
 
     @Override
-    protected void init(Context context, AttributeSet attrs){
+    protected void init(Context context, AttributeSet attrs) {
         super.init(context, attrs);
 
         debugTextPaint = new Paint();
@@ -57,7 +61,7 @@ public class DebugWindowView extends WindowView {
     }
 
     @Override
-    public void onTiltUpdate(float yaw, float pitch, float roll){
+    public void onTiltUpdate(float yaw, float pitch, float roll) {
         super.onTiltUpdate(yaw, pitch, roll);
         this.latestYaw = yaw;
         this.latestPitch = pitch;
@@ -66,40 +70,42 @@ public class DebugWindowView extends WindowView {
 
     /**
      * Enables/disables on-screen debug information.
-     * @param debugTilt if true, displays on-screen information about the current tilt values and limits.
+     *
+     * @param debugTilt  if true, displays on-screen information about the current tilt values and limits.
      * @param debugImage if true, displays on-screen information about the source image and dimensions.
      */
-    public void setDebugEnabled(boolean debugTilt, boolean debugImage){
+    public void setDebugEnabled(boolean debugTilt, boolean debugImage) {
         this.debugTilt = debugTilt;
         this.debugImage = debugImage;
         invalidate();
     }
 
     @Override
-    public void onWindowFocusChanged(boolean hasWindowFocus){
+    public void onWindowFocusChanged(boolean hasWindowFocus) {
         super.onWindowFocusChanged(hasWindowFocus);
-        if(DEBUG_LIFECYCLE) Log.d(LOG_TAG, "onWindowFocusChanged(), hasWindowFocus: " + hasWindowFocus);
+        if (DEBUG_LIFECYCLE)
+            Log.d(LOG_TAG, "onWindowFocusChanged(), hasWindowFocus: " + hasWindowFocus);
     }
 
     @Override
-    protected void onAttachedToWindow(){
+    protected void onAttachedToWindow() {
         super.onAttachedToWindow();
-        if(DEBUG_LIFECYCLE) Log.d(LOG_TAG, "onAttachedToWindow()");
+        if (DEBUG_LIFECYCLE) Log.d(LOG_TAG, "onAttachedToWindow()");
     }
 
     @Override
-    protected void onDetachedFromWindow(){
+    protected void onDetachedFromWindow() {
         super.onDetachedFromWindow();
-        if(DEBUG_LIFECYCLE) Log.d(LOG_TAG, "onDetachedFromWindow()");
+        if (DEBUG_LIFECYCLE) Log.d(LOG_TAG, "onDetachedFromWindow()");
     }
 
     @SuppressWarnings("UnusedAssignment")
     @Override
-    protected void onDraw(@NonNull Canvas canvas){
+    protected void onDraw(@NonNull Canvas canvas) {
         super.onDraw(canvas);
 
         int i = 0;
-        if(debugImage){
+        if (debugImage) {
             debugText(canvas, i++, "width      " + getWidth());
             debugText(canvas, i++, "height     " + getHeight());
             debugText(canvas, i++, "img width  " + (getWidth() + widthDifference));
@@ -109,7 +115,7 @@ public class DebugWindowView extends WindowView {
 
             float translateX = 0;
             float translateY = 0;
-            if(heightMatches){
+            if (heightMatches) {
                 translateX = (-getHorizontalOrigin() +
                         clampAbsoluteFloating(getHorizontalOrigin(), latestRoll, getMaxRoll())) / getMaxRoll();
             } else {
@@ -123,8 +129,8 @@ public class DebugWindowView extends WindowView {
             debugText(canvas, i++, "height matches " + heightMatches);
         }
 
-        if(debugTilt){
-            if(null == sensor) {
+        if (debugTilt) {
+            if (null == sensor) {
                 debugText(canvas, i++, "EXTERNAL TILT SENSOR");
             } else {
                 switch (sensor.getChosenSensorType()) {
@@ -179,7 +185,7 @@ public class DebugWindowView extends WindowView {
             debugText(canvas, i++, "HOR ORIGIN " + getHorizontalOrigin());
             debugText(canvas, i++, "VER ORIGIN " + getVerticalOrigin());
 
-            if(null != sensor) {
+            if (null != sensor) {
                 switch (sensor.getScreenRotation()) {
                     case Surface.ROTATION_0:
                         debugText(canvas, i++, "ROTATION_0");
@@ -198,7 +204,7 @@ public class DebugWindowView extends WindowView {
         }
     }
 
-    private void debugText(Canvas canvas, int i, String text){
+    private void debugText(Canvas canvas, int i, String text) {
         canvas.drawText(text, DEBUG_TEXT_SIZE, (2 + i) * DEBUG_TEXT_SIZE, debugTextPaint);
     }
 }

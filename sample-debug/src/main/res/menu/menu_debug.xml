@@ -1,28 +1,28 @@
 <menu xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
-    tools:context=".DemoActivity" >
+    tools:context=".DemoActivity">
 
     <item
         android:id="@+id/action_reset_orientation"
-        app:showAsAction="always"
-        android:title="@string/action_reset_orientation" />
+        android:title="@string/action_reset_orientation"
+        app:showAsAction="ifRoom" />
 
     <item
         android:id="@+id/action_lock_portrait"
-        app:showAsAction="never"
+        android:checkable="true"
         android:title="@string/action_lock_portrait"
-        android:checkable="true" />
+        app:showAsAction="never" />
 
     <item
         android:id="@+id/action_debug_tilt"
-        app:showAsAction="never"
+        android:checkable="true"
         android:title="@string/action_debug_tilt"
-        android:checkable="true" />
+        app:showAsAction="never" />
 
     <item
         android:id="@+id/action_debug_image"
-        app:showAsAction="never"
+        android:checkable="true"
         android:title="@string/action_debug_image"
-        android:checkable="true" />
+        app:showAsAction="never" />
 </menu>

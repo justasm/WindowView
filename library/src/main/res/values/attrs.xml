@@ -21,7 +21,7 @@
             <enum name="Automatic" value="0" />
             <enum name="Manual" value="1" />
         </attr>
-        
+
         <attr name="orientation_mode" format="enum">
             <enum name="Absolute" value="0" />
             <enum name="Relative" value="1" />
@@ -31,7 +31,7 @@
             <enum name="Constant" value="0" />
             <enum name="Proportional" value="1" />
         </attr>
-        
+
         <attr name="max_constant_translation" format="dimension" />
     </declare-styleable>
 </resources>
