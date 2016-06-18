@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <declare-styleable name="WindowView">
+    <declare-styleable name="wwv_WindowView">
         <!-- May be any number (defined in microseconds), or one of the pre-defined enums. -->
-        <attr name="sensor_sampling_period" format="integer">
+        <attr name="wwv_sensor_sampling_period" format="integer">
             <!-- Maps to SensorManager#SENSOR_DELAY_FASTEST -->
             <enum name="fast" value="0" />
             <!-- Maps to SensorManager#SENSOR_DELAY_GAME -->
@@ -12,26 +12,26 @@
         </attr>
 
         <!-- All in degrees. -->
-        <attr name="max_pitch" format="float" />
-        <attr name="max_roll" format="float" />
-        <attr name="vertical_origin" format="float" />
-        <attr name="horizontal_origin" format="float" />
+        <attr name="wwv_max_pitch" format="float" />
+        <attr name="wwv_max_roll" format="float" />
+        <attr name="wwv_vertical_origin" format="float" />
+        <attr name="wwv_horizontal_origin" format="float" />
 
-        <attr name="tilt_sensor_mode" format="enum">
+        <attr name="wwv_tilt_sensor_mode" format="enum">
             <enum name="Automatic" value="0" />
             <enum name="Manual" value="1" />
         </attr>
 
-        <attr name="orientation_mode" format="enum">
+        <attr name="wwv_orientation_mode" format="enum">
             <enum name="Absolute" value="0" />
             <enum name="Relative" value="1" />
         </attr>
 
-        <attr name="translate_mode" format="enum">
+        <attr name="wwv_translate_mode" format="enum">
             <enum name="Constant" value="0" />
             <enum name="Proportional" value="1" />
         </attr>
 
-        <attr name="max_constant_translation" format="dimension" />
+        <attr name="wwv_max_constant_translation" format="dimension" />
     </declare-styleable>
 </resources>

@@ -162,30 +162,31 @@ public class WindowView extends ImageView implements TiltSensor.TiltListener {
                 getResources().getDisplayMetrics().density;
 
         if (null != attrs) {
-            final TypedArray a = context.obtainStyledAttributes(attrs, R.styleable.WindowView);
-            sensorSamplingPeriod = a.getInt(R.styleable.WindowView_sensor_sampling_period,
+            final TypedArray a = context.obtainStyledAttributes(attrs, R.styleable.wwv_WindowView);
+            sensorSamplingPeriod = a.getInt(R.styleable.wwv_WindowView_wwv_sensor_sampling_period,
                     sensorSamplingPeriod);
-            maxPitchDeg = a.getFloat(R.styleable.WindowView_max_pitch, maxPitchDeg);
-            maxRollDeg = a.getFloat(R.styleable.WindowView_max_roll, maxRollDeg);
-            verticalOriginDeg = a.getFloat(R.styleable.WindowView_vertical_origin,
+            maxPitchDeg = a.getFloat(R.styleable.wwv_WindowView_wwv_max_pitch, maxPitchDeg);
+            maxRollDeg = a.getFloat(R.styleable.wwv_WindowView_wwv_max_roll, maxRollDeg);
+            verticalOriginDeg = a.getFloat(R.styleable.wwv_WindowView_wwv_vertical_origin,
                     verticalOriginDeg);
-            horizontalOriginDeg = a.getFloat(R.styleable.WindowView_horizontal_origin,
+            horizontalOriginDeg = a.getFloat(R.styleable.wwv_WindowView_wwv_horizontal_origin,
                     horizontalOriginDeg);
 
-            int tiltSensorModeIndex = a.getInt(R.styleable.WindowView_tilt_sensor_mode, -1);
+            int tiltSensorModeIndex = a.getInt(R.styleable.wwv_WindowView_wwv_tilt_sensor_mode, -1);
             if (tiltSensorModeIndex >= 0) {
                 tiltSensorMode = TiltSensorMode.values()[tiltSensorModeIndex];
             }
-            int orientationModeIndex = a.getInt(R.styleable.WindowView_orientation_mode, -1);
+            int orientationModeIndex = a.getInt(R.styleable.wwv_WindowView_wwv_orientation_mode, -1);
             if (orientationModeIndex >= 0) {
                 orientationMode = OrientationMode.values()[orientationModeIndex];
             }
-            int translateModeIndex = a.getInt(R.styleable.WindowView_translate_mode, -1);
+            int translateModeIndex = a.getInt(R.styleable.wwv_WindowView_wwv_translate_mode, -1);
             if (translateModeIndex >= 0) {
                 translateMode = TranslateMode.values()[translateModeIndex];
             }
 
-            maxConstantTranslation = a.getDimension(R.styleable.WindowView_max_constant_translation,
+            maxConstantTranslation = a.getDimension(
+                    R.styleable.wwv_WindowView_wwv_max_constant_translation,
                     maxConstantTranslation);
             a.recycle();
         }

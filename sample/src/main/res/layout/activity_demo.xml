@@ -23,6 +23,6 @@
         android:layout_weight="1"
         android:contentDescription="@string/content_description"
         android:src="@drawable/singapore_tall"
-        app:translate_mode="Constant" />
+        app:wwv_translate_mode="Constant" />
 
 </LinearLayout>

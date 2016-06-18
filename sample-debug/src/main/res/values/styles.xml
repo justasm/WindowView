@@ -8,7 +8,7 @@
     <style name="WindowViewBase">
         <item name="android:contentDescription">@string/content_description</item>
 
-        <item name="tilt_sensor_mode">Manual</item>
+        <item name="wwv_tilt_sensor_mode">Manual</item>
     </style>
 
     <style name="WindowViewOne" parent="WindowViewBase">
@@ -18,12 +18,12 @@
     <style name="WindowViewTwo" parent="WindowViewBase">
         <item name="android:src">@drawable/singapore_tall</item>
 
-        <item name="sensor_sampling_period">fast</item>
-        <item name="max_pitch">15</item>
-        <item name="max_roll">15</item>
-        <item name="orientation_mode">Relative</item>
-        <item name="translate_mode">Constant</item>
-        <item name="max_constant_translation">50dp</item>
+        <item name="wwv_sensor_sampling_period">fast</item>
+        <item name="wwv_max_pitch">15</item>
+        <item name="wwv_max_roll">15</item>
+        <item name="wwv_orientation_mode">Relative</item>
+        <item name="wwv_translate_mode">Constant</item>
+        <item name="wwv_max_constant_translation">50dp</item>
     </style>
 
 </resources>
