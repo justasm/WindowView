@@ -153,7 +153,7 @@ public class TiltSensor implements SensorEventListener {
     }
 
     /**
-     * @see {@link Display#getRotation()}
+     * @see Display#getRotation()
      */
     public int getScreenRotation() {
         return screenRotation;

@@ -101,7 +101,6 @@ public class WindowView extends ImageView implements TiltSensor.TiltListener {
          * <li>Use {@link #startTiltTracking()} and {@link #stopTiltTracking()}.
          * Good candidate opportunities to do this are the container Activity's / Fragment's
          * onResume() and onPause() lifecycle events.</li>
-         * <p>
          * <li>Use {@link #attachTiltTracking(TiltSensor)} and
          * {@link #detachTiltTracking(TiltSensor)}. This mode is recommended when using multiple
          * WindowViews in a single logical layout. The externally managed {@link TiltSensor}
